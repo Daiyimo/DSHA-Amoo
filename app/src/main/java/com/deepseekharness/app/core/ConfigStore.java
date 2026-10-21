@@ -25,7 +25,7 @@ public class ConfigStore {
       if (!prefs
           .edit()
           .putString("runtime_engine_legacy", String.valueOf(legacy))
-          .putString(Constants.KEY_CONTAINER_RUNTIME, "bxroot")
+          .putString(Constants.KEY_CONTAINER_RUNTIME, "proot")
           .putInt("runtime_engine_migration", 172)
           .commit()) throw new IllegalStateException("RUNTIME_ENGINE_MIGRATION_PERSISTENCE");
     }
@@ -310,7 +310,7 @@ public class ConfigStore {
     prefs.edit().putBoolean(Constants.KEY_GECKO_CORE, v).apply();
   }
 
-  /** build172 首次升级优先 bxroot；之后显式 proot 选择保持。 */
+  /** 本机构建默认 proot（bxroot 原生库缺失）；迁移后显式选择保持。 */
   public String getContainerRuntime() {
     return com.deepseekharness.app.util.RuntimeEnginePolicy.requested(
         prefs.getAll().get(Constants.KEY_CONTAINER_RUNTIME),

@@ -7,9 +7,11 @@ public final class RuntimeEnginePolicy {
   private RuntimeEnginePolicy() {}
 
   public static String requested(Object value, Object migration) {
+    // 本机构建默认 proot：bxroot 原生库不在发布资产内（设备实测跑 proot），
+    // 迁移完成后仍保持显式选择。
     if (!(migration instanceof Number) || ((Number) migration).intValue() < MIGRATION)
-      return "bxroot";
-    return "proot".equals(value) ? "proot" : "bxroot";
+      return "proot";
+    return "bxroot".equals(value) ? "bxroot" : "proot";
   }
 
   public static String require(String value) {

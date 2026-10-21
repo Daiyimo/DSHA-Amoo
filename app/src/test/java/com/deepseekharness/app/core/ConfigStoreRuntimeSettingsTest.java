@@ -9,14 +9,24 @@ import org.junit.Test;
 
 public class ConfigStoreRuntimeSettingsTest {
   @Test
-  public void oldProotMigratesButNewExplicitSelectionPersists() {
+  public void migrationNormalizesToProotWhileLaterExplicitSelectionPersists() {
+    // 迁移完成前的历史值一律归到 proot 默认（bxroot 原生库不在本机构建资产内）。
     assertEquals(
-        "bxroot",
+        "proot",
         ConfigStore.runtimeSettingsFrom(Map.of(Constants.KEY_CONTAINER_RUNTIME, "proot")).engine);
+    assertEquals(
+        "proot",
+        ConfigStore.runtimeSettingsFrom(Map.of(Constants.KEY_CONTAINER_RUNTIME, "bxroot")).engine);
+    // 迁移标记落地后的显式选择保持，包括显式 bxroot。
     assertEquals(
         "proot",
         ConfigStore.runtimeSettingsFrom(
                 Map.of(Constants.KEY_CONTAINER_RUNTIME, "proot", "runtime_engine_migration", 172))
+            .engine);
+    assertEquals(
+        "bxroot",
+        ConfigStore.runtimeSettingsFrom(
+                Map.of(Constants.KEY_CONTAINER_RUNTIME, "bxroot", "runtime_engine_migration", 172))
             .engine);
   }
 
@@ -24,7 +34,7 @@ public class ConfigStoreRuntimeSettingsTest {
   public void missingSettingsUseTheSingleConfigStoreDefaults() {
     var snapshot = ConfigStore.runtimeSettingsFrom(Map.of());
     assertEquals("auto", snapshot.dnsMode);
-    assertEquals("bxroot", snapshot.engine);
+    assertEquals("proot", snapshot.engine);
     assertTrue(snapshot.staticLoader);
     assertFalse(snapshot.disableProotSeccomp);
   }
@@ -34,7 +44,7 @@ public class ConfigStoreRuntimeSettingsTest {
     assertTrue(ConfigStore.preferFastColdModeFrom(Map.of()));
     var values = Map.of("dns_mode", "ipv4", "ui_language", "en");
     assertTrue(ConfigStore.preferFastColdModeFrom(values));
-    assertEquals("bxroot", ConfigStore.runtimeSettingsFrom(values).engine);
+    assertEquals("proot", ConfigStore.runtimeSettingsFrom(values).engine);
   }
 
   @Test
@@ -63,7 +73,7 @@ public class ConfigStoreRuntimeSettingsTest {
                 "dns_mode",
                 "ipv4"));
     assertEquals("ipv4", snapshot.dnsMode);
-    assertTrue(snapshot.proroot);
+    assertFalse(snapshot.proroot);
     assertFalse(snapshot.staticLoader);
     assertTrue(snapshot.disableProotSeccomp);
   }
@@ -81,7 +91,7 @@ public class ConfigStoreRuntimeSettingsTest {
     var snapshot = ConfigStore.runtimeSettingsFrom(history);
     assertEquals("", history.get(Constants.KEY_WORKDIR));
     assertEquals("ipv4", snapshot.dnsMode);
-    assertTrue(snapshot.proroot);
+    assertFalse(snapshot.proroot);
     assertTrue(snapshot.staticLoader);
     assertFalse(snapshot.disableProotSeccomp);
   }

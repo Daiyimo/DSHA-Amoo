@@ -3,12 +3,12 @@
 const fs=require('node:fs/promises');
 const MAX_SCREENSHOT_BYTES=16*1024*1024;
 const definitions=[
-  ['android_get_state','读取当前 Android 页面结构。操作前读取，操作后再次验证。','/app/ui/dump',{}],
-  ['android_screenshot','截取当前屏幕并返回图片。需要系统截屏能力和 DSHA 授权。','/app/ui/screenshot',{}],
-  ['android_click','点击当前页面上的坐标；坐标必须来自最近一次观察。','/app/ui/tap',{x:{type:'integer',minimum:0},y:{type:'integer',minimum:0}}],
+  ['android_screenshot','【默认观察方式】截取当前屏幕并把图片放进上下文：交给视觉模型（step-5-preview）识别要操作的元素，再用 android_click 按图中坐标点按。需要系统截屏能力和 DSHA 授权。','/app/ui/screenshot',{}],
+  ['android_click','按坐标点击；坐标必须来自最近一次观察——优先取截图中识别出的元素位置。','/app/ui/tap',{x:{type:'integer',minimum:0},y:{type:'integer',minimum:0}}],
   ['android_type','向已聚焦输入框写入文字。涉及敏感操作时先取得用户确认。','/app/ui/input',{text:{type:'string',maxLength:2000}}],
   ['android_key','按下 Android 导航键。','/app/ui/key',{name:{type:'string',enum:['back','home','recents','notifications','quicksettings']}}],
-  ['android_swipe','在观察过的页面上滑动。','/app/ui/swipe',{x1:{type:'integer',minimum:0},y1:{type:'integer',minimum:0},x2:{type:'integer',minimum:0},y2:{type:'integer',minimum:0},ms:{type:'integer',minimum:50,maximum:3000}}]
+  ['android_swipe','在观察过的页面上滑动。','/app/ui/swipe',{x1:{type:'integer',minimum:0},y1:{type:'integer',minimum:0},x2:{type:'integer',minimum:0},y2:{type:'integer',minimum:0},ms:{type:'integer',minimum:50,maximum:3000}}],
+  ['android_get_state','【兜底观察方式】读取控件树（每项带文字与中心坐标）。仅当截图识别失败、需要精确文字匹配、或元素没有视觉特征时使用；用返回的中心坐标配合 android_click 点按。','/app/ui/dump',{}]
 ];
 const tools=definitions.map(([name,description,,properties])=>({name,description,inputSchema:{type:'object',properties,required:Object.keys(properties),additionalProperties:false}}));
 function validate(def,args){if(!args||typeof args!=='object'||Array.isArray(args))throw Error('INVALID_ARGUMENTS');const fields=def[3];if(Object.keys(args).some(k=>!Object.hasOwn(fields,k)))throw Error('UNKNOWN_ARGUMENT');for(const [key,rule]of Object.entries(fields)){const v=args[key];if(rule.type==='integer'&&(!Number.isInteger(v)||v<rule.minimum||rule.maximum!==undefined&&v>rule.maximum))throw Error('INVALID_'+key);if(rule.type==='string'&&(typeof v!=='string'||rule.maxLength&&v.length>rule.maxLength||rule.enum&&!rule.enum.includes(v)))throw Error('INVALID_'+key);}}
@@ -50,7 +50,7 @@ const active=new Map(),cancelled=new Set();let buffer='',queue=Promise.resolve()
 const send=message=>process.stdout.write(JSON.stringify({jsonrpc:'2.0',...message})+'\n');
 async function receive(message){const {id,method,params={}}=message;if(method==='notifications/cancelled'){if(active.has(params.requestId))active.get(params.requestId).abort();else if(cancelled.size<128)cancelled.add(params.requestId);return;}if(id===undefined)return;if(ended||cancelled.delete(id)){send({id,error:{code:-32800,message:'Request cancelled before execution'}});return;}
   try{let result;
-    if(method==='initialize')result={protocolVersion:params.protocolVersion||'2025-03-26',capabilities:{tools:{listChanged:false}},serverInfo:{name:'DSHA Android Computer Use',version:'0.1.0'},instructions:'Use a fresh Android observation before actions and verify afterwards. Respect native permission and confirmation results. Never replay an action whose outcome is unknown.'};
+    if(method==='initialize')result={protocolVersion:params.protocolVersion||'2025-03-26',capabilities:{tools:{listChanged:false}},serverInfo:{name:'DSHA Android Computer Use',version:'0.1.0'},instructions:'Default to visual operation: observe with android_screenshot, identify the target element in the image, then act by coordinates with android_click. Fall back to the accessibility tree (android_get_state) only when visual recognition fails, exact text matching is needed, or an element has no visual features. Use a fresh observation before every action and verify afterwards. Respect native permission and confirmation results. Never replay an action whose outcome is unknown.'};
     else if(method==='ping')result={};
     else if(method==='tools/list')result={tools};
     else if(method==='tools/call'){const controller=new AbortController();active.set(id,controller);try{result=await call(params.name,params.arguments||{},controller.signal);}finally{active.delete(id);}}

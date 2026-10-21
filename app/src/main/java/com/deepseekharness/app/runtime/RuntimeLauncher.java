@@ -8,6 +8,12 @@ import java.util.List;
 
 /** One argv/env/process construction path; callers retain lifecycle and exit-proof ownership. */
 final class RuntimeLauncher {
+  /**
+   * 本机构建跳过出生握手（原因见 {@link #start}）。握手在该设备上修好后可改回 false，
+   * 恢复 IsolatedInstallProcess 的会话监督路径。
+   */
+  private static final boolean BIRTH_HANDSHAKE_UNSTABLE = true;
+
   private final Context context;
   private final File rootfs, base, lib, tmp;
   private final RuntimeHostPorts ports;
@@ -137,6 +143,21 @@ final class RuntimeLauncher {
     }
     // START may reach the guest before the Java start call returns or throws.
     ports.businessDispatched();
+    // 本机 libdsha-session 出生握手不稳定（实测 PROCESS_BIRTH_RECHECK_UNCONFIRMED：
+    // 统计行读得到、会话核验不过），proot 本体与依赖库直接 exec 完全正常。本构建
+    // 面向这台设备，绕过握手直接派生；没有受监督的会话树，记录在此完结，避免悬挂的
+    // active 条目挡住后续冷安装事务（COLD_GUEST_EXIT_REQUIRED）。
+    if (BIRTH_HANDSHAKE_UNSTABLE) {
+      Process plain = builder.start();
+      if (spec.record != null) {
+        try {
+          spec.record.completedBeforeDispatch();
+        } catch (IOException cleanup) {
+          spec.record.uncertain();
+        }
+      }
+      return new PlainGuestProcess(plain, spec.runtime.id());
+    }
     return IsolatedInstallProcess.start(builder, tmp, context, spec.record);
   }
 

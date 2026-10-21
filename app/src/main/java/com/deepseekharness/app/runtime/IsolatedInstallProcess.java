@@ -32,14 +32,9 @@ final class IsolatedInstallProcess extends Process implements AutoCloseable, Own
   private String runtimeMode = "UNKNOWN";
 
   static boolean supported(android.content.Context context) {
-    return sessionLauncher(context) != null;
-  }
-
-  static String sessionLauncher(android.content.Context context) {
-    String bundled = bundledLauncher(context);
-    if (bundled != null) return bundled;
-    File system = new File("/system/bin/setsid");
-    return system.canExecute() ? system.getAbsolutePath() : null;
+    // 本机出生握手不稳定（RuntimeLauncher 已绕过并直接派生普通进程）；
+    // 不向冷安装计划声明 isolated 能力，避免无谓的会话记录周转。
+    return false;
   }
 
   static String bundledLauncher(android.content.Context context) {

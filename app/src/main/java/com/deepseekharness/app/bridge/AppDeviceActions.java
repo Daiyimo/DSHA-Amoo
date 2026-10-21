@@ -6,6 +6,7 @@ import android.os.Looper;
 import com.deepseekharness.app.ForegroundActivity;
 import com.deepseekharness.app.util.BoundedUiCall;
 import com.deepseekharness.app.util.SensitiveData;
+import com.deepseekharness.app.util.StepOsWindowMode;
 
 /** 应用启动和剪贴板动作；授权由当前桥传入，不持有第二套运行或授权状态。 */
 public final class AppDeviceActions {
@@ -31,7 +32,13 @@ public final class AppDeviceActions {
       i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
       if (!current.getAsBoolean()) return "[ERR] SCREEN_RUN_CHANGED";
       submitted = true;
-      ctx.startActivity(i);
+      // StepOS 默认把不声明窗口模式的应用收进画中画；显式请求全屏覆盖该钩子。
+      android.os.Bundle windowing = StepOsWindowMode.fullscreenOptions();
+      // 先让前台预览页收进画中画，再全屏拉起应用：应用全屏、DSHA 悬浮。
+      // 没有前台预览页（应用在后台）时不动它，不把后台应用拽到前台。
+      com.deepseekharness.app.ui.PictureInPictureActivity.requestEnterForAppLaunch();
+      if (windowing != null) ctx.startActivity(i, windowing);
+      else ctx.startActivity(i);
       return com.deepseekharness.app.util.UiText.format("OK: 已启动 %s", pkg);
     } catch (Throwable e) {
       return (submitted ? "[RESULT_UNKNOWN] APP_LAUNCH_RESULT_UNKNOWN: " : "ERROR: ")

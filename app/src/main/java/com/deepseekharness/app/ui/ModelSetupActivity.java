@@ -17,6 +17,10 @@ import java.util.*;
 
 /** 首次配置与快捷入口共用原生编辑器，读写 DSH 的实际配置。 */
 public final class ModelSetupActivity extends AppCompatActivity {
+  /** StepFun 预设：安装后用户只填 API Key 即可使用（端点与模型能力面见官方文档）。 */
+  private static final String STEPFUN_ROUTE = "stepfun";
+  private static final String STEPFUN_ENDPOINT = "https://api.stepfun.com/step_plan/v1";
+
   private DshModelRepository repository;
   private Draft draft;
   private CardPage page;
@@ -227,6 +231,16 @@ public final class ModelSetupActivity extends AppCompatActivity {
         });
     page.entry(
         add,
+        t("添加 StepFun 模型", "Add StepFun models"),
+        t(
+            "step-5-preview 已预填（支持图片输入），只需填写 API Key",
+            "step-5-preview is prefilled (image input supported); only the API key is needed"),
+        R.drawable.ic_ui_link,
+        () -> {
+          if (writable) openStepFun();
+        });
+    page.entry(
+        add,
         t("选择内置服务商", "Choose a built-in provider"),
         t("使用 DSH 已支持的服务商配置", "Use a provider supported by DSH"),
         R.drawable.ic_ui2_box,
@@ -268,6 +282,50 @@ public final class ModelSetupActivity extends AppCompatActivity {
       draft.protocol = "openai-completions";
       showEditor();
     }
+  }
+
+  /** StepFun 预设入口：已配置过就直接打开现有条目，否则按内置默认预填，用户只补密钥。 */
+  private void openStepFun() {
+    for (JsonElement item : current.getAsJsonArray("providers")) {
+      JsonObject entry = item.getAsJsonObject();
+      if (STEPFUN_ROUTE.equals(s(entry, "provider"))) {
+        open(entry, false);
+        return;
+      }
+    }
+    JsonObject entry = new JsonObject();
+    entry.addProperty("provider", STEPFUN_ROUTE);
+    entry.addProperty("settingsNs", "llm-pi-ai");
+    entry.add("settingsPath", ModelConfiguration.path("providers", STEPFUN_ROUTE));
+    open(entry, true);
+    if (draft.entry == null || !draft.custom) return;
+    // 只补缺省：用户层已有配置（合并值非空）一律保留，预填永不覆盖。
+    if (draft.name.isEmpty()) draft.name = "StepFun";
+    if (draft.endpoint.isEmpty()) draft.endpoint = STEPFUN_ENDPOINT;
+    if (draft.protocol.isEmpty()) draft.protocol = "openai-completions";
+    if (draft.modelList.isEmpty()) draft.modelList = stepFunModels();
+    showEditor();
+  }
+
+  /** step-5-preview：官方文档能力面——文本/图片输入、1M 上下文、low/medium/high 推理档。 */
+  private static JsonArray stepFunModels() {
+    JsonObject model = new JsonObject();
+    model.addProperty("id", "step-5-preview");
+    model.addProperty("name", "Step 5 Preview");
+    model.addProperty("contextWindow", 1_000_000L);
+    model.add("input", ModelConfiguration.path("text", "image"));
+    JsonObject efforts = new JsonObject();
+    efforts.add("off", com.google.gson.JsonNull.INSTANCE);
+    efforts.addProperty("low", "low");
+    efforts.addProperty("medium", "medium");
+    efforts.addProperty("high", "high");
+    model.add("reasoningEfforts", efforts);
+    JsonObject compat = new JsonObject();
+    compat.addProperty("supportsReasoningEffort", true);
+    model.add("compat", compat);
+    JsonArray models = new JsonArray();
+    models.add(model);
+    return models;
   }
 
   private void open(JsonObject entry, boolean custom) {

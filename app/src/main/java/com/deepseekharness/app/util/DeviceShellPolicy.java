@@ -18,6 +18,7 @@ public final class DeviceShellPolicy {
     STOP,
     SENSITIVE_READ,
     VIRTUAL_SCREEN,
+    ATOMIC,
     DENY
   }
 
@@ -179,6 +180,7 @@ public final class DeviceShellPolicy {
     }
     if (name.equals("find")) return inspectFind(args);
     if (name.equals("logcat")) return inspectLogcat(args);
+    if (name.equals("cmd")) return inspectAppFunction(args);
     if (name.equals("am") && args.size() == 2 && args.get(1).equals("get-current-user"))
       return plan(Kind.READ, args, Collections.emptyList());
     // app_process can load arbitrary DEX code. The narrowly managed virtual-screen
@@ -441,6 +443,85 @@ public final class DeviceShellPolicy {
     return finite
         ? plan(Kind.READ, args, Collections.emptyList())
         : deny(com.deepseekharness.app.util.UiText.text("读取日志请指定 -d 或 -t 行数"));
+  }
+
+  /**
+   * StepOS 原子化能力（AppFunction）通道：只放行 app_function 服务的
+   * list-app-functions 与 execute-app-function，参数逐个校验。
+   * cmd 的其它子命令（package/settings/pm/statusbar…）能改设备状态，一律拒绝。
+   * JSON 参数必须用单引号包裹——split() 拒绝双引号内的反斜杠转义。
+   */
+  private static Plan inspectAppFunction(List<String> args) {
+    if (args.size() < 3 || !args.get(1).equals("app_function"))
+      return deny(com.deepseekharness.app.util.UiText.text("cmd 只允许 app_function 原子能力服务"));
+    String sub = args.get(2);
+    if (sub.equals("list-app-functions")) {
+      int i = 3;
+      if (i < args.size() && args.get(i).equals("--user")) {
+        if (i + 1 >= args.size() || !args.get(i + 1).matches("[0-9]+|current"))
+          return deny(com.deepseekharness.app.util.UiText.text("无法识别用户编号"));
+        i += 2;
+      }
+      if (i != args.size())
+        return deny(com.deepseekharness.app.util.UiText.text("未识别的 list-app-functions 参数"));
+      return plan(Kind.ATOMIC, args, Collections.emptyList());
+    }
+    if (sub.equals("execute-app-function")) {
+      String pkg = null, function = null, parameters = null;
+      int i = 3;
+      while (i < args.size()) {
+        String flag = args.get(i);
+        if (!flag.startsWith("--") || i + 1 >= args.size())
+          return deny(com.deepseekharness.app.util.UiText.text("无法识别的 execute-app-function 参数"));
+        String value = args.get(i + 1);
+        switch (flag) {
+          case "--package" -> pkg = value;
+          case "--function" -> function = value;
+          case "--parameters" -> parameters = value;
+          case "--user" -> {
+            if (!value.matches("[0-9]+|current"))
+              return deny(com.deepseekharness.app.util.UiText.text("无法识别用户编号"));
+          }
+          case "--timeout-duration" -> {
+            int seconds;
+            try {
+              seconds = Integer.parseInt(value);
+            } catch (NumberFormatException invalid) {
+              return deny(com.deepseekharness.app.util.UiText.text("无法识别超时秒数"));
+            }
+            if (seconds < 1 || seconds > 120)
+              return deny(com.deepseekharness.app.util.UiText.text("超时必须在 1–120 秒之间"));
+          }
+          default -> {
+            return deny(
+                com.deepseekharness.app.util.UiText.format("execute-app-function 不接受的参数：%s", flag));
+          }
+        }
+        i += 2;
+      }
+      if (pkg == null || function == null || parameters == null)
+        return deny(
+            com.deepseekharness.app.util.UiText.text(
+                "execute-app-function 必须带 --package、--function 与 --parameters"));
+      if (!packageName(pkg))
+        return deny(com.deepseekharness.app.util.UiText.text("无法识别应用包名"));
+      if (!function.matches("[A-Za-z][A-Za-z0-9_$]*(?:\\.[A-Za-z][A-Za-z0-9_$]*)*#[A-Za-z_][A-Za-z0-9_]*"))
+        return deny(com.deepseekharness.app.util.UiText.text("无法识别 AppFunction ID"));
+      if (!jsonObject(parameters))
+        return deny(com.deepseekharness.app.util.UiText.text("--parameters 必须是 JSON 对象"));
+      return plan(Kind.ATOMIC, args, Collections.emptyList());
+    }
+    return deny(
+        com.deepseekharness.app.util.UiText.text("app_function 只允许 list-app-functions 与 execute-app-function"));
+  }
+
+  /** 参数只接受 JSON 对象；非法 JSON（含裸控制字符）一律拒绝。 */
+  private static boolean jsonObject(String value) {
+    try {
+      return com.google.gson.JsonParser.parseString(value).isJsonObject();
+    } catch (RuntimeException invalid) {
+      return false;
+    }
   }
 
   public static boolean packageName(String name) {

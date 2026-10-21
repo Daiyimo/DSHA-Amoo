@@ -331,7 +331,7 @@ def request_device_plan(cmd, use_su=False):
         if not isinstance(value, str) or not value.startswith('{'):
             raise policy.Blocked(str(value or '原生策略未就绪'))
         plan = json.loads(value)
-        if plan.get('version') != 1 or plan.get('kind') not in ('READ', 'FILE', 'STOP'):
+        if plan.get('version') != 1 or plan.get('kind') not in ('READ', 'FILE', 'STOP', 'ATOMIC'):
             raise policy.Blocked(plan.get('reason') or '命令未获策略允许')
         plan['su'] = use_su
         return plan

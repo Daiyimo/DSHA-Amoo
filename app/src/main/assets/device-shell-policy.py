@@ -278,7 +278,7 @@ def stop_targets(plan, shell):
 
 
 def execute(plan, shell, result_class):
-    if not isinstance(plan, dict) or plan.get('version') != 1 or plan.get('kind') not in ('READ', 'FILE', 'STOP', 'VIRTUAL_SCREEN'):
+    if not isinstance(plan, dict) or plan.get('version') != 1 or plan.get('kind') not in ('READ', 'FILE', 'STOP', 'VIRTUAL_SCREEN', 'ATOMIC'):
         raise Blocked('原生设备策略没有授权此操作')
     if plan['kind'] == 'VIRTUAL_SCREEN':
         argv = plan.get('argv')

@@ -346,4 +346,33 @@ public class DeviceShellPolicyTest {
             "/mnt/expand/fixture/user/0"))
       assertTrue(root, DeviceShellPolicy.smsProviderDescendant(root));
   }
+
+  @Test
+  public void appFunctionAtomicAbilitiesAreNarrowlyAllowed() {
+    for (String cmd :
+        new String[] {
+          "cmd app_function list-app-functions",
+          "cmd app_function list-app-functions --user 0",
+          "cmd app_function execute-app-function --package com.stepos.weather --function 'com.stepos.weather.appfunctions.WeatherFunctions#get_current_location_weather' --parameters '{}'",
+          "cmd app_function execute-app-function --package com.stepos.appstore --function 'com.stepos.appcenter.appfunctions.AppStoreFunctions#searchApp' --parameters '{\"keyword\":\"x\"}' --timeout-duration 30",
+          "cmd app_function execute-app-function --package com.stepos.appstore --function 'com.stepos.appcenter.appfunctions.AppStoreFunctions#installApp' --parameters '{\"name\":\"x\"}' --user current"
+        })
+      assertEquals(cmd, DeviceShellPolicy.Kind.ATOMIC, DeviceShellPolicy.inspect(cmd).kind);
+    denied(
+        "cmd",
+        "cmd app_function",
+        "cmd package list packages",
+        "cmd settings put global adb_enabled 1",
+        "cmd statusbar expand-notifications",
+        "cmd app_function set-enabled --package com.stepos.weather --function 'a#b' --state disable",
+        "cmd app_function execute-app-function --package com.stepos.weather --function 'Weather#get' --parameters '{}' --su",
+        "cmd app_function execute-app-function --package com.stepos.weather --function 'Weather#get'",
+        "cmd app_function execute-app-function --package com.stepos.weather --parameters '{}'",
+        "cmd app_function execute-app-function --function 'Weather#get' --parameters '{}'",
+        "cmd app_function execute-app-function --package com.stepos.weather --function 'Weather#get' --parameters 'not-json'",
+        "cmd app_function execute-app-function --package com.stepos.weather --function 'Weather#get' --parameters '[]'",
+        "cmd app_function execute-app-function --package com.stepos.weather --function 'Weather#get' --parameters '{}' --timeout-duration 999",
+        "cmd app_function execute-app-function --package com.stepos.weather --function 'bad function id' --parameters '{}'",
+        "cmd app_function execute-app-function --package 'bad package' --function 'Weather#get' --parameters '{}'");
+  }
 }

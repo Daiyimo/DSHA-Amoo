@@ -64,6 +64,15 @@ const buildPrompt = cache => [
   '    震动 /app/vibrate?ms= · 导出文件 /app/export?path= · 读 sdcard 文件 /app/readfile?path=',
   '    位置 /app/location · 传感器 /app/sensors 与 /app/sensor?type= · 手电 /app/torch?on=1',
 
+  '■ StepOS 原子化能力（AppFunction；经设备 shell 调用，需在 设置 → 设备能力授权 连好 ADB）：',
+  '  列出本机全部可用能力：/root/dsh-bin/adb-shell "cmd app_function list-app-functions"',
+  '  调用（函数 ID 含 #、--parameters 是 JSON 对象，两者都必须用单引号包裹；' +
+  '    双引号里的反斜杠转义会被策略拒绝）：',
+  '  /root/dsh-bin/adb-shell "cmd app_function execute-app-function --package com.stepos.appstore --function \'com.stepos.appcenter.appfunctions.AppStoreFunctions#searchApp\' --parameters \'{\\"keyword\\":\\"微信\\"}\'"',
+  '  本机已注册：应用商店搜索/安装 com.stepos.appstore · 天气 com.stepos.weather ·',
+  '  相机自拍/美颜模式 com.stepos.media.camera · 支付宝 xUI 服务 com.stepos.common.ability.proxy。',
+  '  返回是 JSON；失败按错误码处理并如实说明，不要反复重试同一条。',
+
   '■ 硬约束（几条，都别违）：',
   '  - 短信是独立敏感能力：用 adb-shell 执行 content query --uri content://sms，默认逐次确认。' +
   '    持续自动化需用户在设置 → 设备能力授权中开启短信读取，可随时撤销；仅当前 Android 用户，' +

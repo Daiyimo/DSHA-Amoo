@@ -79,6 +79,13 @@ android {
     buildTypes {
         debug {
             debuggable true
+            // 真机联调：-Pdsha.coexistSuffix=<后缀> 让 debug 包以 <applicationId>.<后缀>
+            // 共存安装，不覆盖设备上已配置好的线上包（发布钥不在本机，签不了同名包）。
+            // 新包名须先加 StepOS USB 安装白名单：settings put secure
+            // usb_install_item_<完整包名> "DSHA:1"。
+            if (project.hasProperty('dsha.coexistSuffix')) {
+                applicationIdSuffix project.property('dsha.coexistSuffix')
+            }
         }
         release {
             minifyEnabled false

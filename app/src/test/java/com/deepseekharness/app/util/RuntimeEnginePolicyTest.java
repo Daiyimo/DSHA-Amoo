@@ -6,10 +6,14 @@ import org.junit.Test;
 public class RuntimeEnginePolicyTest {
   @Test
   public void everyLegacyChoiceMigratesBeforeNewExplicitProotPersists() {
+    // 本机构建默认 proot（bxroot 原生库缺失）：迁移标记未落地时，任何历史值
+    // （含显式 bxroot）一律归到 proot 默认。
     for (Object value : new Object[] {null, "proot", "proroot", "bxroot", "", 42, false})
-      assertEquals("bxroot", RuntimeEnginePolicy.requested(value, 171));
+      assertEquals("proot", RuntimeEnginePolicy.requested(value, 171));
+    // 迁移落地后的显式选择保持，历史脏值归 proot。
     assertEquals("proot", RuntimeEnginePolicy.requested("proot", 172));
-    assertEquals("bxroot", RuntimeEnginePolicy.requested("proroot", 172));
+    assertEquals("bxroot", RuntimeEnginePolicy.requested("bxroot", 172));
+    assertEquals("proot", RuntimeEnginePolicy.requested("proroot", 172));
   }
 
   @Test

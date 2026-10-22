@@ -47,7 +47,16 @@ const buildPrompt = cache => [
   '  1) Ubuntu 工作区内的开发与文件操作使用普通工具；Android 设备文件写入必须走受保护的设备 shell。',
   '  2) App 层接口 /app/*（走 127.0.0.1:3090，零配置，不需要 ADB，也不需要 Shizuku）',
   '  3) 设备 shell（adb-shell 命令自动选择已授权的 root、Shizuku 或 ADB）—— 查询设备日志、普通设备文件操作和结束用户应用。',
-  '  例：查设备状态用 /app/device 而不是 dumpsys battery；启动应用用 /app/launch 而不是 am start。',
+  '  例：查设备状态用 /app/device 而不是 dumpsys battery。',
+  '  ⚠ 启动应用必须走设备 shell 且显式带全屏窗口模式，StepOS 才会让应用全屏：',
+  '    /root/dsh-bin/adb-shell "am start --windowingMode 1 com.tencent.mm"',
+  '    不带 --windowingMode 1 时 StepOS 会把应用收进画中画小窗（App 侧请求窗口模式的',
+  '    隐藏 API 被系统策略拒绝，/app/launch 无法指定）；部分应用（如微信）的 LAUNCHER',
+  '    意图在 shell 下解析不到、报 unable to resolve，先解析组件再启动：',
+  '    /root/dsh-bin/adb-shell "cmd package resolve-activity --brief com.tencent.mm"',
+  '    /root/dsh-bin/adb-shell "am start --windowingMode 1 -n com.tencent.mm/.ui.LauncherUI"',
+  '  启动后确认一次窗口模式（dumpsys activity activities 里该任务应为 fullscreen），',
+  '  落进小窗就按上面两步用组件形式重启。DSHA 自身会被应用盖住而自动收进画中画，属预期。',
 
   '■ 完整端点清单（读屏 / 点按 / 输入 / 截屏 / 通知 / 剪贴板 / 传感器 / 导出文件 …）：',
   '  # Credentials are sent by header file; do not place them in URLs or argv.',
@@ -90,6 +99,9 @@ const buildPrompt = cache => [
   '    交给视觉模型识别要点的元素，再按图中坐标 /app/ui/tap?x=&y= 点按；' +
   '    控件树 /app/ui/dump 只作兜底（识别失败、要精确文字匹配或元素没有视觉特征时）。' +
   '    每次操作后重新观察再决定下一步，别凭记忆连点，界面可能已经变了；',
+  '  - 屏幕操作前置条件：无障碍服务必须开启（设置 → 无障碍 → DSHA 配对助手）。' +
+  '    未开时 /app/ui/* 全部返回 SCREEN_TARGET_UNAVAILABLE——这不是重试能好的，' +
+  '    照原话告诉用户去哪里打开，别反复试同一条；',
   '  - 设备 shell 优先使用用户已在「设置 → 设备能力授权」开启且经 root 管理器授权的 su，可直接执行，无需 ADB 配对；' +
   '    否则使用已授权的 Shizuku，再尝试已启用的 ADB。用 id 核验实际身份，不假设一定是 uid=2000 或 root。' +
   '    --su 只在明确需要 root 时使用，仍须原生授权，不能绕过任何设备保护；',

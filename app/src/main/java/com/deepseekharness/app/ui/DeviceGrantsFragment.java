@@ -211,6 +211,18 @@ public final class DeviceGrantsFragment extends Fragment {
           syncSettings();
           refreshAdbStatus(view.findViewById(R.id.config_adb_status));
         });
+    CompoundButton vdisplay = view.findViewById(R.id.config_execution_vdisplay);
+    if (vdisplay != null) {
+      var store = new com.deepseekharness.app.core.ConfigStore(ctx);
+      vdisplay.setChecked(store.isExecutionOnVirtualDisplay());
+      vdisplay.setOnCheckedChangeListener(
+          (button, enabled) -> {
+            store.setExecutionOnVirtualDisplay(enabled);
+            // 关掉时收回已建的虚拟屏，避免留在后台占资源。
+            if (!enabled) com.deepseekharness.app.vscreen.VirtualScreenManager.from(ctx).revoke();
+            syncSettings();
+          });
+    }
     view.findViewById(R.id.config_adb_pair)
         .setOnClickListener(
             button -> {

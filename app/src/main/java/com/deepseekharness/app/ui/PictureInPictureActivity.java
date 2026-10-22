@@ -61,6 +61,11 @@ public abstract class PictureInPictureActivity extends AppCompatActivity {
               controller.getWebGeneration(),
               controller.isStopping(),
               controller.isUserStopped())) {
+            // 在虚拟屏上直接 finish 会把会话一起销毁；先搬回主屏再说。
+            if (virtualDisplayId > 0) {
+              restoreConversationFromVirtualDisplay();
+              return;
+            }
             finish();
             return;
           }
@@ -258,6 +263,10 @@ public abstract class PictureInPictureActivity extends AppCompatActivity {
   @androidx.annotation.RequiresApi(26)
   private boolean enterIfAllowed() {
     if (!mayEnter() || showing(this)) return false;
+    // 优先按用户选择把对话搬到虚拟屏：主屏只剩目标应用，截图里没有 DSHA 自己
+    // 的窗口，坐标仍是真实屏幕的 1200x2670，不需要为虚拟屏单写一套换算规则。
+    // 任何一步不成立都返回 false，继续走下面的画中画，行为不会比现在差。
+    if (moveConversationToVirtualDisplay()) return true;
     pictureFrame.freezeViewport();
     try {
       if (enterPictureInPictureMode(parameters(false))) return true;
@@ -267,6 +276,101 @@ public abstract class PictureInPictureActivity extends AppCompatActivity {
       android.util.Log.w("DSHA-PiP", "系统未接受画中画：" + unavailable.getClass().getSimpleName());
     }
     return false;
+  }
+
+  /** 对话当前所在的虚拟 display；0 表示还在主屏。 */
+  private int virtualDisplayId;
+
+  /** 画中画过渡期建虚拟屏会失败，延后到过渡结束再搬。 */
+  private static final long VIRTUAL_MOVE_DELAY_MS = 700L;
+
+  private boolean virtualMovePending;
+
+  /**
+   * 把同一个 singleTask 对话搬到虚拟屏。复用 {@link #hideConversation()} 已验证过的
+   * 「重启动画不销毁网页」套路：REORDER_TO_FRONT|SINGLE_TOP 让系统复用现有实例，
+   * 只改它落在哪块 display 上，页面、草稿和浏览器会话都留着。
+   *
+   * <p>虚拟屏要经设备 shell 创建；通道不通、系统不接受或 displayId 拿不到时都返回
+   * false，由调用方回落到画中画。
+   */
+  private boolean moveConversationToVirtualDisplay() {
+    if (virtualDisplayId > 0 || isFinishing() || isDestroyed()) return false;
+    if (!new ConfigStore(this).isExecutionOnVirtualDisplay()) {
+      android.util.Log.i("DSHA-PiP", "搬迁未启用");
+      return false;
+    }
+    // 建虚拟屏要走网络和设备 shell，主线程调用直接抛 NetworkOnMainThreadException
+    // （真机诊断日志实证：VSCREEN_CREATE ... NetworkOnMainThreadException；同一操作走
+    // 3090 桥却成功，因为桥跑在请求工作线程上）。所以创建放后台线程，拿到 displayId
+    // 再回主线程搬 Activity。调用方此时已经在画中画里，创建失败就保持画中画。
+    var manager = com.deepseekharness.app.vscreen.VirtualScreenManager.from(this);
+    java.util.concurrent.Executors.newSingleThreadExecutor()
+        .execute(
+            () -> {
+              int display = -1;
+              String error = "";
+              try {
+                var created = manager.start("portrait");
+                if (!created.optBoolean("ok")) error = created.optString("error");
+                else display = created.optInt("displayId", -1);
+              } catch (RuntimeException unavailable) {
+                error = unavailable.getClass().getSimpleName();
+              }
+              final int resolved = display;
+              final String why = error;
+              pictureHandler.post(() -> applyVirtualDisplay(resolved, why));
+            });
+    return true;
+  }
+
+  /** 主线程里把对话落到虚拟 display 上；创建失败就地留在画中画。 */
+  private void applyVirtualDisplay(int display, String error) {
+    if (display <= 0) {
+      android.util.Log.w("DSHA-PiP", "虚拟屏创建失败，保持画中画: " + error);
+      return;
+    }
+    if (virtualDisplayId > 0 || isFinishing() || isDestroyed()) return;
+    try {
+      var options = android.app.ActivityOptions.makeBasic().setLaunchDisplayId(display);
+      startActivity(
+          new Intent(this, getClass())
+              .addFlags(
+                  Intent.FLAG_ACTIVITY_NEW_TASK
+                      | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                      | Intent.FLAG_ACTIVITY_SINGLE_TOP)
+              .putExtra(BrowserConversationRoute.MODE, "HIDDEN"),
+          options.toBundle());
+      virtualDisplayId = display;
+      presentation.hide();
+      userHidden = true;
+      leavingForActivity = true;
+      cancelConversationRequests();
+      android.util.Log.i("DSHA-PiP", "对话已搬到虚拟屏 display=" + display);
+    } catch (RuntimeException unavailable) {
+      android.util.Log.w(
+          "DSHA-PiP", "搬迁失败，保持画中画：" + unavailable.getClass().getSimpleName());
+    }
+  }
+
+  /** 把对话从虚拟屏搬回主屏；会话结束后调用，避免窗口留在看不见的 display 上。 */
+  private void restoreConversationFromVirtualDisplay() {
+    int display = virtualDisplayId;
+    virtualDisplayId = 0;
+    if (display <= 0 || isFinishing() || isDestroyed()) return;
+    try {
+      var options = android.app.ActivityOptions.makeBasic().setLaunchDisplayId(0);
+      startActivity(
+          new Intent(this, getClass())
+              .addFlags(
+                  Intent.FLAG_ACTIVITY_NEW_TASK
+                      | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                      | Intent.FLAG_ACTIVITY_SINGLE_TOP)
+              .putExtra(BrowserConversationRoute.MODE, "SHOWN"),
+          options.toBundle());
+    } catch (RuntimeException unavailable) {
+      android.util.Log.w("DSHA-PiP", "搬回主屏失败：" + unavailable.getClass().getSimpleName());
+    }
   }
 
   /** 返回原生启动页，不隐式进入画中画。 */
@@ -414,6 +518,26 @@ public abstract class PictureInPictureActivity extends AppCompatActivity {
     if (inPicture) pictureHandler.post(pictureMonitor);
     refreshPictureInPicture();
     if (!inPicture && conversationHidden() && userHidden) hideConversationTask();
+    // Android 12+ 的 setAutoEnterEnabled(true) 会让系统直接进画中画，不经过
+    // onPictureInPictureRequested()，所以 enterIfAllowed() 里的搬迁分支会被绕过。
+    // 这里是两条路径的必经之地：已经进了画中画、而用户要求用虚拟屏时，就地搬走。
+    // 但不能同步做——正在画中画过渡时经设备 shell 建虚拟屏会失败（实测
+    // VSCREEN_OPERATION_FAILED，而同一时刻走桥创建是成功的），所以延后到过渡结束。
+    if (inPicture && virtualDisplayId <= 0 && !virtualMovePending) scheduleVirtualMove();
+  }
+
+  /** 画中画过渡结束后再建虚拟屏并搬迁；只排一次，失败也不重排（回落画中画）。 */
+  private void scheduleVirtualMove() {
+    if (!new ConfigStore(this).isExecutionOnVirtualDisplay()) return;
+    virtualMovePending = true;
+    pictureHandler.postDelayed(
+        () -> {
+          virtualMovePending = false;
+          if (virtualDisplayId > 0 || isFinishing() || isDestroyed()) return;
+          if (!showing(this)) return;
+          moveConversationToVirtualDisplay();
+        },
+        VIRTUAL_MOVE_DELAY_MS);
   }
 
   @Override

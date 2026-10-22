@@ -103,6 +103,10 @@
       "markers": [
         "DSHA_REQUIRED_POLICY_V1"
       ]
+    },
+    {
+      "asset": "stepfun-harness-patch.json",
+      "module": "@deepseek-ai/dsh-base/cordis.patch.yml"
     }
   ],
   "specialized": [

@@ -17,8 +17,14 @@ import java.util.*;
 
 /** 首次配置与快捷入口共用原生编辑器，读写 DSH 的实际配置。 */
 public final class ModelSetupActivity extends AppCompatActivity {
-  /** StepFun 预设：安装后用户只填 API Key 即可使用（端点与模型能力面见官方文档）。 */
+  /**
+   * StepFun 预设：安装后用户只填 API Key 即可使用（端点与模型能力面见官方文档）。
+   * 路由 stepfun 与 harness 默认模型补丁（dsh-base 的 agent-default-model）一致；
+   * 设备上早期手动按 step 路由配过的，预设入口也识别为同一服务商（打开现有条目、
+   * 只补缺省不覆盖），不会产生重复条目。
+   */
   private static final String STEPFUN_ROUTE = "stepfun";
+  private static final String STEPFUN_LEGACY_ROUTE = "step";
   private static final String STEPFUN_ENDPOINT = "https://api.stepfun.com/step_plan/v1";
 
   private DshModelRepository repository;
@@ -284,11 +290,12 @@ public final class ModelSetupActivity extends AppCompatActivity {
     }
   }
 
-  /** StepFun 预设入口：已配置过就直接打开现有条目，否则按内置默认预填，用户只补密钥。 */
+  /** StepFun 预设入口：已配置过（stepfun 或早期 step 路由）就直接打开现有条目，否则按内置默认预填，用户只补密钥。 */
   private void openStepFun() {
     for (JsonElement item : current.getAsJsonArray("providers")) {
       JsonObject entry = item.getAsJsonObject();
-      if (STEPFUN_ROUTE.equals(s(entry, "provider"))) {
+      String route = s(entry, "provider");
+      if (STEPFUN_ROUTE.equals(route) || STEPFUN_LEGACY_ROUTE.equals(route)) {
         open(entry, false);
         return;
       }

@@ -69,6 +69,7 @@
     "register-builtin-plugins.py",
     "runtime-descriptor.json",
     "runtime-patches.json",
+    "stepfun-harness-patch.json",
     "runtime-tools.json",
     "runtime-trial-entry.js",
     "runtime-trial-page.js",

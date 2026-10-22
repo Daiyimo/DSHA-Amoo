@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "dshVersion": "0.2.0-rc.2",
+  "module": "@deepseek-ai/dsh-base/cordis.patch.yml",
+  "patches": [
+    {
+      "before": "    - id: agent-default-model\n      name: '@deepseek-ai/dsh-agent-default-model'\n      config:\n        provider: deepseek-official\n        model: deepseek-flash",
+      "after": "    - id: agent-default-model\n      name: '@deepseek-ai/dsh-agent-default-model'\n      config:\n        provider: stepfun\n        model: step-5-preview"
+    },
+    {
+      "before": "    - id: llm-deepseek-account\n      name: '@deepseek-ai/dsh-llm-deepseek-account'",
+      "after": "    - id: llm-deepseek-account\n      name: '@deepseek-ai/dsh-llm-deepseek-account'\n      disabled: true"
+    }
+  ]
+}

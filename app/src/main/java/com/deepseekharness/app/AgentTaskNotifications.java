@@ -122,8 +122,30 @@ public final class AgentTaskNotifications {
                     value.optString("outcome"),
                     SystemClock.elapsedRealtime());
     // All frequent progress is rendered by the 1 Hz clock; terminal facts bypass it.
-    if (accepted && value.optString("phase").equals("ended")) main.post(this::render);
+    if (accepted && value.optString("phase").equals("ended")) {
+      main.post(this::render);
+      // 任务执行完成：把 DSHA 对话窗口拉回前台。执行期间被全屏应用盖住时 DSHA
+      // 自动收进画中画（自由小窗），StepOS 上画中画任务回前台即展开全屏。
+      var ended = key(value);
+      main.post(() -> restoreConversation(ended.generation(), ended.instance(), ended.session()));
+    }
     return accepted ? "OK" : "[TASK_REJECTED]";
+  }
+
+  /**
+   * 任务结束把对话窗口带回前台：DSHA 不在前台时（执行期间被应用盖住、收进了画中画
+   * 或退到后台），用会话路由把对话任务拉回前台——StepOS 上画中画任务回前台即展开
+   * 全屏，执行期间是小窗、结束后恢复全屏。已在前台（全屏或主页）时不打断。
+   */
+  private void restoreConversation(long generation, String instance, String session) {
+    if (ForegroundActivity.current() != null) return;
+    try {
+      context.startActivity(
+          com.deepseekharness.app.ui.BrowserConversationRoute.conversation(
+              context, generation, instance, session));
+    } catch (RuntimeException unavailable) {
+      // 预览宿主未就绪（运行时已停）时静默跳过：通知里的「回聊天」仍可手动打开。
+    }
   }
 
   public synchronized List<AgentTaskState.View> snapshot() {

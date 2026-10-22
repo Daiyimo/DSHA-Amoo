@@ -32,6 +32,10 @@ public final class DeviceGrants {
     synchronized (SCREEN_LOCK) {
       try {
         String value = preferences.getString(SCREEN_POLICY, "");
+        // 从未设置过（本机构建默认）走全部允许：模型在设备上执行操作不逐次询问。
+        // 设置里切到「全部手动」或「按应用自定义」后此处读到已存值，不再走默认。
+        if (value == null || value.isEmpty())
+          return com.deepseekharness.app.util.ScreenConfirmationPolicy.allowAll();
         return com.deepseekharness.app.util.ScreenConfirmationPolicy.decode(value);
       } catch (Exception malformed) {
         // Corrupt or future preference data never silently enables control.

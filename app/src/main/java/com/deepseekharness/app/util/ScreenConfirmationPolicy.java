@@ -38,6 +38,15 @@ public final class ScreenConfirmationPolicy {
     return new ScreenConfirmationPolicy(Mode.MANUAL, Map.of(), 0);
   }
 
+  /**
+   * 本机构建默认允许：模型在设备上执行操作不再逐次弹窗确认（无人值守时会话
+   * 会因 USER_NO_ANSWER 卡死，屏幕读取与操作全部失败）。用户仍可在
+   * 设置 → 设备能力授权里切回「全部手动」或「按应用自定义」。
+   */
+  public static ScreenConfirmationPolicy allowAll() {
+    return new ScreenConfirmationPolicy(Mode.ALLOW_ALL, Map.of(), 0);
+  }
+
   public String encode() {
     StringBuilder value =
         new StringBuilder("1\n").append(mode.name()).append('\n').append(revision).append('\n');

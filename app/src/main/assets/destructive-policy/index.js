@@ -62,7 +62,18 @@ export async function prepareOperation(runtime, exec) {
   record.analysis = analysis;
   const facts = encoded([record.name, exec.arguments, record.workdir, record.actualWorkdir, envFacts(record.environment)]);
   record.facts = facts;
-  if (REQUIRE_APPROVAL && analysis.requiresApproval) await approve(record, exec, 'DSHA ' + analysis.classification + ': ' + (analysis.opaqueReason || analysis.findings.map(row=>row.kind).join(', ')) + '; workdir=' + record.workdir.dir + '; targets=' + (analysis.unknownTargets ? 'unknown; count unknown' : analysis.targets.join(', ')) + '. Verify the original command; allow this call once.', facts);
+  if (REQUIRE_APPROVAL && analysis.requiresApproval) {
+    await approve(record, exec, 'DSHA ' + analysis.classification + ': ' + (analysis.opaqueReason || analysis.findings.map(row=>row.kind).join(', ')) + '; workdir=' + record.workdir.dir + '; targets=' + (analysis.unknownTargets ? 'unknown; count unknown' : analysis.targets.join(', ')) + '. Verify the original command; allow this call once.', facts);
+  } else if (analysis.requiresApproval) {
+    // 默认允许：不请求用户审批，但必须照常建立 lease。verifyDispatch 在
+    // requiresApproval 时无条件 consumeLease(record, record.facts)，没有票就抛
+    // DSHA_DESTRUCTIVE_BLOCKED: Matching one-time approval is missing，
+    // 于是每条被分类为 OPAQUE 的命令（cmd/am 全不在 safe 白名单里）都在派发前
+    // 硬失败——真机 session log 实证：全屏启动和原子能力两步都是这个错，
+    // 根本没走到设备 shell，容易被误判成"通道没配对"。
+    check(record,exec);
+    record.lease={ facts, consumed:false, approval:serviceIdentity(record.ctx.get('approval')) };
+  }
 }
 export function verifyDispatch(runtime, exec, tool) {
   const record=executions.get(exec); check(record,exec);

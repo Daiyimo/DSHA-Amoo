@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "runtimeId": "25bdc90f511029bc053d1b6fbe9682c38c77d691473d75c7ab4b3bfb8151c520",
+  "runtimeId": "e2d7648dc381496c479dedd9899a6d1f9e98315bd6de851e6679f8eff7a15001",
   "baseVersion": "10",
   "dshVersion": "0.2.0-rc.2",
   "launcherContract": "DSHA_ARM64_V2",
@@ -455,7 +455,7 @@
     "credential-yaml-filter.cjs": "3d6504475047061a9c0fb9d2477d532cf2665a663164f4cb0c870137a7d7c114",
     "deepseek-messages-compat-patch.json": "2459e4db37eebf9f20d5bfbb1be9ddfb1b8bf66a7f1bfaf57c60b88f8c3cc1c6",
     "destructive-policy/destructive.js": "a57dc469a7e7da32bd0b55ddd18cd68bb65f709b5389f2475093eafb098c8726",
-    "destructive-policy/index.js": "68d2f29302f189c131a2c6bd4b192338b7cb5239008fc7add4c5b0eefefb2764",
+    "destructive-policy/index.js": "7f5fddcaf87b1bab887d67cc9e4c934d1bd53f515dc6af050e45a684f929a475",
     "destructive-policy/package.json": "217d0f036224d8faa766d166a1a38df1c03f7da2a8a7ad8a0454ae595372395c",
     "destructive-policy/workdir.js": "a401d96b87f2b1cc566ebb1b55b8a827f67f08c2418d1e739e870fa775b55861",
     "device-shell-policy.py": "f11d302fc375550e4b4f1ef293cbdf0a678911a22f320a26b7999fe549c4a57a",

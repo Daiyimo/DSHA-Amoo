@@ -355,13 +355,16 @@ public class DeviceShellPolicyTest {
           "cmd app_function list-app-functions --user 0",
           "cmd app_function execute-app-function --package com.stepos.weather --function 'com.stepos.weather.appfunctions.WeatherFunctions#get_current_location_weather' --parameters '{}'",
           "cmd app_function execute-app-function --package com.stepos.appstore --function 'com.stepos.appcenter.appfunctions.AppStoreFunctions#searchApp' --parameters '{\"keyword\":\"x\"}' --timeout-duration 30",
-          "cmd app_function execute-app-function --package com.stepos.appstore --function 'com.stepos.appcenter.appfunctions.AppStoreFunctions#installApp' --parameters '{\"name\":\"x\"}' --user current"
+          "cmd app_function execute-app-function --package com.stepos.appstore --function 'com.stepos.appcenter.appfunctions.AppStoreFunctions#installApp' --parameters '{\"name\":\"x\"}' --user current",
+          "cmd package resolve-activity --brief com.tencent.mm"
         })
       assertEquals(cmd, DeviceShellPolicy.Kind.ATOMIC, DeviceShellPolicy.inspect(cmd).kind);
     denied(
         "cmd",
         "cmd app_function",
         "cmd package list packages",
+        "cmd package resolve-activity",
+        "cmd package resolve-activity --brief 'bad package'",
         "cmd settings put global adb_enabled 1",
         "cmd statusbar expand-notifications",
         "cmd app_function set-enabled --package com.stepos.weather --function 'a#b' --state disable",
@@ -374,5 +377,26 @@ public class DeviceShellPolicyTest {
         "cmd app_function execute-app-function --package com.stepos.weather --function 'Weather#get' --parameters '{}' --timeout-duration 999",
         "cmd app_function execute-app-function --package com.stepos.weather --function 'bad function id' --parameters '{}'",
         "cmd app_function execute-app-function --package 'bad package' --function 'Weather#get' --parameters '{}'");
+  }
+
+  @Test
+  public void stepOsFullscreenLaunchOnlyAllowsWindowingModeOne() {
+    for (String cmd :
+        new String[] {
+          "am start --windowingMode 1 com.tencent.mm",
+          "am start --windowingMode 1 -n com.tencent.mm/.ui.LauncherUI",
+          "am start --windowingMode 1 -n com.stepos.filemanager/.MainActivity"
+        })
+      assertEquals(cmd, DeviceShellPolicy.Kind.LAUNCH, DeviceShellPolicy.inspect(cmd).kind);
+    denied(
+        "am start com.tencent.mm",
+        "am start --windowingMode 11 com.tencent.mm",
+        "am start --windowingMode 1",
+        "am start --windowingMode 1 com.tencent.mm --ez extra value",
+        "am start --windowingMode 1 -n com.tencent.mm",
+        "am start --windowingMode 1 -n 'bad package/.Main'",
+        "am start --windowingMode 1 -n com.tencent.mm/ui.LauncherUI --ez extra value",
+        "am startservice --windowingMode 1 com.tencent.mm",
+        "am broadcast --windowingMode 1 com.tencent.mm");
   }
 }

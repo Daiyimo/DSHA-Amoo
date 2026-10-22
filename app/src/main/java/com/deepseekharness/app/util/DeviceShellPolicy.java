@@ -19,6 +19,7 @@ public final class DeviceShellPolicy {
     SENSITIVE_READ,
     VIRTUAL_SCREEN,
     ATOMIC,
+    LAUNCH,
     DENY
   }
 
@@ -180,13 +181,32 @@ public final class DeviceShellPolicy {
     }
     if (name.equals("find")) return inspectFind(args);
     if (name.equals("logcat")) return inspectLogcat(args);
-    if (name.equals("cmd")) return inspectAppFunction(args);
+    if (name.equals("cmd")) return inspectCmd(args);
     if (name.equals("am") && args.size() == 2 && args.get(1).equals("get-current-user"))
       return plan(Kind.READ, args, Collections.emptyList());
     // app_process can load arbitrary DEX code. The narrowly managed virtual-screen
     // launcher has a separate typed entry point and is never accepted as a shell command.
     if (name.equals("app_process"))
       return deny(com.deepseekharness.app.util.UiText.text("app_process 仅允许原生受管虚拟屏入口"));
+    // StepOS 全屏启动：应用必须显式带窗口模式启动，否则 StepOS 的 ActivityStarter
+    // 钩子会把它收进 stepos-mini-window（画中画）。App 侧的
+    // ActivityOptions.setLaunchWindowingMode 反射被 hidden-API 策略拒绝
+    // （api=blocked，logcat 实证），只能经 shell 的 am 工具设置（shell uid 不受限）。
+    // 只放行全屏（--windowingMode 1）一种模式：包名简写，或 -n 显式组件
+    // （部分应用如微信的 LAUNCHER 意图在 shell 下解析不到，必须先 resolve-activity）。
+    if (name.equals("am")
+        && args.size() >= 5
+        && args.get(1).equals("start")
+        && args.get(2).equals("--windowingMode")
+        && args.get(3).equals("1")) {
+      if (args.size() == 5 && packageName(args.get(4)))
+        return plan(Kind.LAUNCH, args, Collections.emptyList());
+      if (args.size() == 6 && args.get(4).equals("-n") && launchComponent(args.get(5)))
+        return plan(Kind.LAUNCH, args, Collections.emptyList());
+      return deny(
+          com.deepseekharness.app.util.UiText.text(
+              "启动应用只允许 am start --windowingMode 1 加完整包名或 -n 包名/类名"));
+    }
     if (name.equals("am")
         && args.size() == 3
         && set("force-stop kill").contains(args.get(1))
@@ -207,6 +227,12 @@ public final class DeviceShellPolicy {
       }
       return plan(Kind.STOP, args, targets);
     }
+    // am 的其余形式（start 不带全屏窗口模式、带 extras、startservice/broadcast 等）
+    // 一律拒绝，并给出可操作的纠正信息。
+    if (name.equals("am"))
+      return deny(
+          com.deepseekharness.app.util.UiText.text(
+              "am 只允许 start --windowingMode 1（全屏启动，包名或 -n 组件）与 force-stop/kill"));
     if (FILE.contains(name)) return inspectFile(args);
     return deny(com.deepseekharness.app.util.UiText.format("不认识的命令不执行：%s", name));
   }
@@ -446,14 +472,27 @@ public final class DeviceShellPolicy {
   }
 
   /**
-   * StepOS 原子化能力（AppFunction）通道：只放行 app_function 服务的
-   * list-app-functions 与 execute-app-function，参数逐个校验。
-   * cmd 的其它子命令（package/settings/pm/statusbar…）能改设备状态，一律拒绝。
+   * cmd 通道：只放行两类设备查询/能力调用——
+   * 1) app_function 原子化能力服务（list-app-functions 与 execute-app-function），
+   *    参数逐个校验；
+   * 2) package resolve-activity --brief（全屏启动前解析启动组件）。
+   * cmd 的其它子命令（settings/statusbar/pm…）能改设备状态，一律拒绝。
    * JSON 参数必须用单引号包裹——split() 拒绝双引号内的反斜杠转义。
    */
-  private static Plan inspectAppFunction(List<String> args) {
-    if (args.size() < 3 || !args.get(1).equals("app_function"))
-      return deny(com.deepseekharness.app.util.UiText.text("cmd 只允许 app_function 原子能力服务"));
+  private static Plan inspectCmd(List<String> args) {
+    if (args.size() < 3)
+      return deny(com.deepseekharness.app.util.UiText.text("cmd 需要子命令"));
+    if (args.get(1).equals("package")) {
+      // 全屏启动的前置查询：包名 → 启动组件（如 com.tencent.mm/.ui.LauncherUI）。
+      if (args.size() == 5
+          && args.get(2).equals("resolve-activity")
+          && args.get(3).equals("--brief")
+          && packageName(args.get(4)))
+        return plan(Kind.ATOMIC, args, Collections.emptyList());
+      return deny(com.deepseekharness.app.util.UiText.text("cmd package 只允许 resolve-activity --brief 查询启动组件"));
+    }
+    if (!args.get(1).equals("app_function"))
+      return deny(com.deepseekharness.app.util.UiText.text("cmd 只允许 app_function 原子能力与 package resolve-activity"));
     String sub = args.get(2);
     if (sub.equals("list-app-functions")) {
       int i = 3;
@@ -513,6 +552,16 @@ public final class DeviceShellPolicy {
     }
     return deny(
         com.deepseekharness.app.util.UiText.text("app_function 只允许 list-app-functions 与 execute-app-function"));
+  }
+
+  /** am start -n 的启动组件：包名/类名，类名可带前导点（相对类名简写）。 */
+  private static boolean launchComponent(String value) {
+    if (value == null) return false;
+    int split = value.indexOf('/');
+    if (split <= 0 || split == value.length() - 1) return false;
+    String cls = value.substring(split + 1);
+    return packageName(value.substring(0, split))
+        && cls.matches("\\.?[A-Za-z_][A-Za-z0-9_$]*(?:\\.[A-Za-z_][A-Za-z0-9_$]*)*");
   }
 
   /** 参数只接受 JSON 对象；非法 JSON（含裸控制字符）一律拒绝。 */

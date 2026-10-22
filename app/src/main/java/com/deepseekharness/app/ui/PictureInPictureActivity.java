@@ -269,23 +269,6 @@ public abstract class PictureInPictureActivity extends AppCompatActivity {
     return false;
   }
 
-  /**
-   * 桥发起 /app/launch 时调用（允许在桥工作线程）：当前前台预览页主动收进画中画，
-   * 给即将全屏拉起的应用让位。进入动作切到主线程执行；没有前台预览页时返回
-   * false——应用在后台时不把它拽到前台，留给系统 auto-enter 自然处理。
-   */
-  public static boolean requestEnterForAppLaunch() {
-    androidx.fragment.app.FragmentActivity host =
-        com.deepseekharness.app.ForegroundActivity.current();
-    if (!(host instanceof PictureInPictureActivity)) return false;
-    PictureInPictureActivity preview = (PictureInPictureActivity) host;
-    if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper())
-      preview.enterIfAllowed();
-    else
-      new android.os.Handler(android.os.Looper.getMainLooper()).post(preview::enterIfAllowed);
-    return true;
-  }
-
   /** 返回原生启动页，不隐式进入画中画。 */
   protected final void leavePreview() {
     hideConversation();

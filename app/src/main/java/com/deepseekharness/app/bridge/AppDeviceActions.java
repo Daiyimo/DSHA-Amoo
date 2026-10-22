@@ -32,13 +32,19 @@ public final class AppDeviceActions {
       if (!current.getAsBoolean()) return "[ERR] SCREEN_RUN_CHANGED";
       submitted = true;
       ctx.startActivity(i);
-      // StepOS 提示：本通道不请求窗口模式（App 侧 setLaunchWindowingMode 反射被
-      // hidden-API 策略拒绝，logcat 实证 api=blocked），StepOS 会把应用收进
-      // stepos-mini-window 画中画。要全屏启动请走设备 shell：
-      // am start --windowingMode 1 包名（解析不到时先
-      // cmd package resolve-activity --brief 包名 再 -n 组件启动）。
+      // StepOS 按调用方决定窗口模式：DSHA 拉起的应用被收进 stepos-mini-window
+      // 画中画小窗，App 侧无法覆盖——setLaunchWindowingMode 反射被 hidden-API
+      // 策略拒绝（logcat 实证 api=blocked），ActivityOptions 的 Bundle 键
+      // （android:activity.windowingMode）实测到不了决策点（钩子收到 undefined）。
+      // 全屏启动只能走设备 shell（shell uid 的 am 工具不受该钩子判定）：
+      //   am start --windowingMode 1 包名
+      //   解析不到时先 cmd package resolve-activity --brief 包名 再 -n 组件
+      // 设备 shell 未配对（DEVICE_CHANNEL_UNAVAILABLE）时先在 DSHA 设置 →
+      // 设备能力授权里连接 ADB 通道。
       return com.deepseekharness.app.util.UiText.format(
-          "OK: 已启动 %s（StepOS 上如需全屏，请用 adb-shell \"am start --windowingMode 1 %s\"）", pkg, pkg);
+          "OK: 已启动 %s（StepOS 上进小窗；要全屏请用 adb-shell \"am start --windowingMode 1 %s\"，"
+              + "shell 未配对时先在 设置 → 设备能力授权 连接 ADB）",
+          pkg, pkg);
     } catch (Throwable e) {
       return (submitted ? "[RESULT_UNKNOWN] APP_LAUNCH_RESULT_UNKNOWN: " : "ERROR: ")
           + safeError(e);

@@ -12,7 +12,6 @@
   <img src="https://img.shields.io/badge/Android-6%2B%20%2F%2011%2B-3DDC84?logo=android&logoColor=white" alt="android">
   <img src="https://img.shields.io/badge/arch-arm64--v8a-lightgrey" alt="arch">
   <a href="https://afdian.com/a/dsha_apk"><img src="https://img.shields.io/badge/Afdian-Sponsor-946CE6?logo=afdian&logoColor=white" alt="Afdian"></a>
-  <a href="https://qm.qq.com/q/N5aZSlnmgM"><img src="https://img.shields.io/badge/QQ%20Group-975836806-1EBAFC?logo=qq&logoColor=white" alt="QQ group"></a>
 </p>
 
 <p align="center">
@@ -365,16 +364,6 @@ artifact replacement) is documented in [BUILD.md](BUILD.md) and [docs/releases/]
 - [Termux terminal-view / terminal-emulator](https://github.com/termux/termux-app) (Apache-2.0) — PTY terminal
 - [dsh-web-mobile](https://github.com/mexiaosqwq/dsh-web-mobile) — bundled mobile adaptation
 - [Shizuku](https://shizuku.rikka.app/) — backup device-command channel
-
-## Community
-
-QQ group **975836806** — pre-release builds, feedback, plugin talk.
-
-| Topic | Contact |
-|---|---|
-| Original author (partnership / licensing) | QQ 2921185884 |
-| Current maintainer (proposals / feedback, or just open an issue) | QQ 1876843459 |
-| Email | 1437ht@gmail.com |
 
 ## License
 

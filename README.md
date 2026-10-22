@@ -12,7 +12,6 @@
   <img src="https://img.shields.io/badge/Android-6%2B%20%2F%2011%2B-3DDC84?logo=android&logoColor=white" alt="android">
   <img src="https://img.shields.io/badge/arch-arm64--v8a-lightgrey" alt="arch">
   <a href="https://afdian.com/a/dsha_apk"><img src="https://img.shields.io/badge/%E7%88%B1%E5%8F%91%E7%94%B5-%E8%B5%9E%E5%8A%A9-946CE6?logo=afdian&logoColor=white" alt="爱发电"></a>
-  <a href="https://qm.qq.com/q/N5aZSlnmgM"><img src="https://img.shields.io/badge/QQ%E7%BE%A4-975836806-1EBAFC?logo=qq&logoColor=white" alt="QQ群"></a>
 </p>
 
 <p align="center">
@@ -356,18 +355,6 @@ python tools/verify-stability.py             # 稳定性验收门禁
 - [Termux terminal-view / terminal-emulator](https://github.com/termux/termux-app)（Apache-2.0）—— PTY 终端
 - [dsh-web-mobile](https://github.com/mexiaosqwq/dsh-web-mobile) —— 内置移动端适配
 - [Shizuku](https://shizuku.rikka.app/) —— 备用设备命令通道
-
-## 交流
-
-QQ 群 **975836806** (二群)—— 测试版、问题反馈、插件交流。
-❗二群已满，请加一群❗
-★QQ 群**960636357** (老一群)现已扩容！
-
-| 事宜 | 联系 |
-|---|---|
-| 项目主创（合作/授权/入伙） | QQ 2921185884 |
-| 现维护者（项目提议/反馈，或直接提 issue） | QQ 1876843459 |
-| Email | 1437ht@gmail.com |
 
 ## 许可
 

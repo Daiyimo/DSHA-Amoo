@@ -84,28 +84,6 @@ public final class DeviceShellExecutor {
     }
   }
 
-  /** Privileged typed entry used only by VirtualScreenManager, never by generic shell text. */
-  static String executeVirtualScreen(String command, Runner runner) {
-    return executeVirtualScreen(command, runner, null);
-  }
-
-  static String executeVirtualScreen(
-      String command, Runner runner, com.deepseekharness.app.util.SelfPackageIdentity identity) {
-    int uid = android.os.Process.myUid();
-    if (uid != 0 && uid != 2000)
-      return com.deepseekharness.app.util.UiText.text(
-          "[POLICY_BLOCKED] 虚拟屏启动仅允许特权设备通道\n[EXIT=126]");
-    try {
-      if (identity == null) throw new IOException("SELF_PACKAGE_UNVERIFIED");
-      DeviceShellPolicy.Plan plan =
-          DeviceShellPolicy.inspectVirtualScreenLaunch(command, identity.source, identity.name);
-      if (!plan.allowed()) return plan.reason + "\n[EXIT=126]";
-      return runner.run(plan.argv);
-    } catch (IOException | IllegalArgumentException error) {
-      return "[POLICY_BLOCKED] " + SensitiveData.redact(error.getMessage()) + "\n[EXIT=126]";
-    }
-  }
-
   /** Recheck SMS-provider file reads at the privileged execution boundary. */
   static void validateRootReadPaths(DeviceShellPolicy.Plan plan) throws IOException {
     boolean recursive = DeviceShellPolicy.rootReadMayDescend(plan);

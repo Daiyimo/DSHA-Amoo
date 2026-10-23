@@ -278,27 +278,8 @@ def stop_targets(plan, shell):
 
 
 def execute(plan, shell, result_class):
-    if not isinstance(plan, dict) or plan.get('version') != 1 or plan.get('kind') not in ('READ', 'FILE', 'STOP', 'VIRTUAL_SCREEN', 'ATOMIC', 'LAUNCH'):
+    if not isinstance(plan, dict) or plan.get('version') != 1 or plan.get('kind') not in ('READ', 'FILE', 'STOP', 'ATOMIC', 'LAUNCH'):
         raise Blocked('原生设备策略没有授权此操作')
-    if plan['kind'] == 'VIRTUAL_SCREEN':
-        argv = plan.get('argv')
-        source = plan.get('sourceApk')
-        self_package = plan.get('selfPackage')
-        if (not isinstance(argv, list) or len(argv) != 9 or argv[0] != 'app_process'
-                or not isinstance(source, str) or not re.fullmatch(r'/data/app/[^\s]+\.apk', source)
-                or '..' in source.split('/') or '\\' in source or '//' in source
-                or argv[1] != '-Djava.class.path=' + source
-                or argv[2] != '/system/bin'
-                or argv[3] != 'com.deepseekharness.app.vscreen.VirtualScreenCore'
-                or argv[4:6] != ['--launch', '--port']
-                or not re.fullmatch(r'8[0-9]{3}', argv[6])
-                or not isinstance(self_package,str) or not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)+',self_package)
-                or argv[7:] != ['--package',self_package]
-                or plan.get('nativeAuthorization') != 'managed-vscreen-start'
-                or not re.fullmatch(r'[a-f0-9]{48}', str(plan.get('nativeTicket', '')))
-                or plan.get('su', False)):
-            raise Blocked('虚拟屏启动参数无法核验')
-        return shell(argv_command(argv))
     # ADB may itself be privileged; SMS file paths never bypass native query authorization.
     validate_root_reads(plan, shell)
     if plan['kind'] == 'STOP':

@@ -7,7 +7,7 @@ public class OneShotLaunchAuthorityTest {
   private static final String TICKET = "0123456789abcdef0123456789abcdef0123456789abcdef";
   private static final String COMMAND =
       "app_process -Djava.class.path=/data/app/com.dsh.client/base.apk /system/bin "
-          + "com.deepseekharness.app.vscreen.VirtualScreenCore --launch --port 8800";
+          + "com.example.NativeCore --launch --port 8800";
 
   @Test
   public void planAndCommitAreExactGenerationBoundAndOneUse() {

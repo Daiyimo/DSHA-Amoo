@@ -24,6 +24,11 @@ import java.util.Set;
 
 /** Ordinary task notifications, independent of the runtime's foreground service notification. */
 public final class AgentTaskNotifications {
+  /** 任务活跃状态变化监听：画中画抑制与任务胶囊（灵动岛）都靠在状态变化时刷新。 */
+  public interface StateListener {
+    void onTaskStateChanged();
+  }
+
   private static final String CHANNEL = "dsh_task_progress";
   private static final int ID = 2010;
   private static AgentTaskNotifications instance;
@@ -32,6 +37,7 @@ public final class AgentTaskNotifications {
   private final Handler main = new Handler(Looper.getMainLooper());
   private final Set<String> posted = new HashSet<>();
   private final Set<String> terminalShown = new HashSet<>();
+  private final Set<StateListener> listeners = java.util.Collections.synchronizedSet(new HashSet<>());
   private final Runnable tick =
       new Runnable() {
         public void run() {
@@ -151,6 +157,31 @@ public final class AgentTaskNotifications {
   public synchronized List<AgentTaskState.View> snapshot() {
     sync();
     return state.snapshot(SystemClock.elapsedRealtime());
+  }
+
+  /** 是否有 agent 任务正在执行：执行期间 DSHA 不进画中画，改由任务胶囊展示状态。 */
+  public synchronized boolean hasActiveTask() {
+    for (var row : state.snapshot(SystemClock.elapsedRealtime())) {
+      if (row.active()) return true;
+    }
+    return false;
+  }
+
+  public void addStateListener(StateListener listener) {
+    listeners.add(listener);
+  }
+
+  public void removeStateListener(StateListener listener) {
+    listeners.remove(listener);
+  }
+
+  private void notifyStateChanged() {
+    main.post(
+        () -> {
+          for (var listener : new HashSet<>(listeners)) {
+            listener.onTaskStateChanged();
+          }
+        });
   }
 
   public synchronized boolean stop(Intent intent) {
@@ -334,5 +365,8 @@ public final class AgentTaskNotifications {
         posted.remove(tag);
         terminalShown.remove(tag);
       }
+    // 同一份 1Hz 时钟同时驱动通知、画中画抑制判定与任务胶囊；状态没变时各消费方自行幂等。
+    com.deepseekharness.app.AgentTaskIsland.refresh(context);
+    notifyStateChanged();
   }
 }

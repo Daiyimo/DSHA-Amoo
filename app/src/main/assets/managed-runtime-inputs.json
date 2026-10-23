@@ -258,26 +258,6 @@
       "executable": false
     },
     {
-      "asset": "builtin-plugins/dsh-tool-vscreen/package.json",
-      "target": "root/dsha-tool-vscreen/package.json",
-      "executable": false
-    },
-    {
-      "asset": "builtin-plugins/dsh-tool-vscreen/cordis.patch.yml",
-      "target": "root/dsha-tool-vscreen/cordis.patch.yml",
-      "executable": false
-    },
-    {
-      "asset": "builtin-plugins/dsh-tool-vscreen/lib/index.js",
-      "target": "root/dsha-tool-vscreen/lib/index.js",
-      "executable": false
-    },
-    {
-      "asset": "builtin-plugins/dsh-tool-vscreen/lib/server.cjs",
-      "target": "root/dsha-tool-vscreen/lib/server.cjs",
-      "executable": false
-    },
-    {
       "asset": "dsha-plugin.sh",
       "target": "root/dsh-bin/dsha-plugin",
       "executable": true
@@ -1745,7 +1725,6 @@
     "util/DshAuthUrl.java",
     "util/HttpProtocol.java",
     "util/WebHealthProbe.java",
-    "util/VscreenBridgeRequest.java",
     "util/TouchGestureDispatch.java",
     "util/ManagedRuntimePaths.java",
     "util/ProcStat.java",
@@ -1772,16 +1751,12 @@
     "util/DeviceShellPolicy.java",
     "util/ScreenTarget.java",
     "util/SensitiveAppPolicy.java",
-    "util/VirtualScreenRequestFence.java",
     "util/CoalescingPoller.java",
     "DeviceBridgeService.java",
     "DeviceShellExecutor.java",
     "ShellService.java",
     "RootShell.java",
     "RootShellMain.java",
-    "vscreen/VirtualScreenCore.java",
-    "vscreen/VirtualScreenManager.java",
-    "vscreen/VirtualScreenPreviews.java",
     "core/WebLifecycleController.java",
     "core/LanAuthBridge.java",
     "core/HostConfigService.java",
@@ -1800,7 +1775,6 @@
     "util/DeviceFileOperations.java",
     "util/LanTokenState.java",
     "util/LanFailureResponse.java",
-    "util/VirtualScreenBootstrap.java",
     "util/DeviceScriptProof.java",
     "util/PrivilegedContextFailure.java",
     "util/ProcessBirthHandshake.java",
@@ -1809,7 +1783,6 @@
     "util/WebStopDiagnostic.java",
     "util/WebStopException.java",
     "data/PortableSettings.java",
-    "vscreen/VirtualScreenAccessibility.java",
     "util/AdbWheelPaths.java",
     "util/AdbDependencyPreparation.java",
     "util/AdbWheelCache.java",
@@ -1831,13 +1804,6 @@
     "util/AccessibilityDumpBounds.java",
     "util/BridgeConfirmations.java",
     "util/ScreenActionResult.java",
-    "util/VirtualScreenErrors.java",
-    "util/VirtualScreenFailures.java",
-    "util/VirtualScreenInputPolicy.java",
-    "util/VirtualScreenInputResult.java",
-    "util/VirtualScreenPolicy.java",
-    "util/VirtualScreenRoutes.java",
-    "util/VirtualScreenStroke.java",
     "util/VirtualScreenWindowPolicy.java",
     "core/ColdSetupTiming.java",
     "util/RuntimeEnginePolicy.java",

@@ -7,8 +7,6 @@ import java.util.Map;
 /** 3090 桥的路径选择；只识别端点，不解释查询参数或执行平台动作。 */
 public final class BridgeRoutes {
   public enum Route {
-    DEVICE_VSCREEN_START(true),
-    DEVICE_VSCREEN_COMMIT(false),
     DEVICE_PLAN(true),
     DEVICE_EXECUTE(true),
     NOTIFY(false),
@@ -20,7 +18,6 @@ public final class BridgeRoutes {
     READ_FILE(false),
     HEALTH(false),
     UI(false),
-    VSCREEN(false),
     DEVICE(false),
     APPS(false),
     LAUNCH(false),
@@ -59,8 +56,6 @@ public final class BridgeRoutes {
 
   private static Map<String, Route> exactRoutes() {
     Map<String, Route> routes = new HashMap<>();
-    add(routes, "/device/vscreen/start", Route.DEVICE_VSCREEN_START);
-    add(routes, "/device/vscreen/commit", Route.DEVICE_VSCREEN_COMMIT);
     add(routes, "/device/plan", Route.DEVICE_PLAN);
     add(routes, "/device/execute", Route.DEVICE_EXECUTE);
     add(routes, "/app/notify", Route.NOTIFY);
@@ -102,7 +97,6 @@ public final class BridgeRoutes {
     Route exact = EXACT.get(path);
     if (exact != null) return exact;
     if (path.startsWith("/app/ui/")) return Route.UI;
-    if (path.startsWith("/app/vscreen/")) return Route.VSCREEN;
     return Route.UNKNOWN;
   }
 }

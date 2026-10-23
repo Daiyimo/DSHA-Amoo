@@ -28,7 +28,6 @@ public final class RootShellMain {
       String operation = request.optString("operation", "");
       boolean identityRequired =
           smsUser >= 0
-              || operation.equals("virtual-screen-start")
               || com.deepseekharness.app.util.DeviceShellPolicy.inspect(command).kind
                   == com.deepseekharness.app.util.DeviceShellPolicy.Kind.STOP;
       ShellService shell;
@@ -41,8 +40,7 @@ public final class RootShellMain {
       else
         shell =
             new ShellService(); // Historical ordinary reads do not require a guessed app identity.
-      if (operation.equals("virtual-screen-start")) output = shell.execVirtualScreen(command);
-      else if (operation.isEmpty())
+      if (operation.isEmpty())
         output = smsUser < 0 ? shell.exec(command) : shell.execAuthorizedSms(command, smsUser);
       else throw new SecurityException("未知 Root 操作");
     } catch (Throwable e) {

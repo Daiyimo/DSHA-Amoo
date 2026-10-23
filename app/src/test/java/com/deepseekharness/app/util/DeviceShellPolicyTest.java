@@ -206,66 +206,8 @@ public class DeviceShellPolicyTest {
     denied(
         "app_process /system/bin com.example.Main",
         "app_process -Djava.class.path=/data/app/com.dsh.client/base.apk /system/bin "
-            + "com.deepseekharness.app.vscreen.VirtualScreenCore --launch --port 8801 --token "
+            + "com.example.NativeCore --launch --port 8801 --token "
             + "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-  }
-
-  @Test
-  public void typedVirtualScreenLauncherRequiresExactCanonicalInstalledApk() {
-    String apk = "/data/app/com.dsh.client/base.apk";
-    String prefix =
-        "app_process -Djava.class.path="
-            + apk
-            + " /system/bin "
-            + "com.deepseekharness.app.vscreen.VirtualScreenCore --launch --port 8998 --package com.dsh.clienu";
-    assertEquals(
-        DeviceShellPolicy.Kind.VIRTUAL_SCREEN,
-        DeviceShellPolicy.inspectVirtualScreenLaunch(prefix, apk, "com.dsh.clienu").kind);
-    for (String bad :
-        new String[] {
-          "/data/app/../../data/local/tmp/probe.apk",
-          "/data/app/com.attacker.client/base.apk",
-          "/data/app/com.dsh.client/../other.apk",
-          "/data/app/com.dsh.client/base.apk/../base.apk"
-        }) {
-      String command = prefix.replace(apk, bad);
-      assertEquals(
-          command,
-          DeviceShellPolicy.Kind.DENY,
-          DeviceShellPolicy.inspectVirtualScreenLaunch(command, apk, "com.dsh.clienu").kind);
-    }
-    assertEquals(
-        DeviceShellPolicy.Kind.DENY,
-        DeviceShellPolicy.inspectVirtualScreenLaunch(
-                prefix.replace("8998", "89999"), apk, "com.dsh.clienu")
-            .kind);
-    assertEquals(
-        DeviceShellPolicy.Kind.DENY,
-        DeviceShellPolicy.inspectVirtualScreenLaunch(
-                prefix + " --token 0123456789abcdef0123456789abcdef0123456789abcdef",
-                apk,
-                "com.dsh.clienu")
-            .kind);
-  }
-
-  @Test
-  public void missingOrMismatchedLaunchIdentityDoesNotDefault() {
-    String apk = "/data/app/clone/base.apk";
-    String command =
-        "app_process -Djava.class.path="
-            + apk
-            + " /system/bin com.deepseekharness.app.vscreen.VirtualScreenCore --launch --port 8800 --package com.dsh.clienu";
-    assertEquals(
-        DeviceShellPolicy.Kind.DENY,
-        DeviceShellPolicy.inspectVirtualScreenLaunch(command, apk).kind);
-    assertEquals(
-        DeviceShellPolicy.Kind.DENY,
-        DeviceShellPolicy.inspectVirtualScreenLaunch(command, apk, "com.dsh.client").kind);
-    assertEquals(
-        DeviceShellPolicy.Kind.DENY,
-        DeviceShellPolicy.inspectVirtualScreenLaunch(
-                command.replace(" --package com.dsh.clienu", ""), apk, "com.dsh.clienu")
-            .kind);
   }
 
   @Test

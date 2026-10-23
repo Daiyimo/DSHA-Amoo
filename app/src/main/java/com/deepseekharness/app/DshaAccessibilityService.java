@@ -411,8 +411,8 @@ public class DshaAccessibilityService extends AccessibilityService {
    * 动作被拒是因为「目标窗口或运行状态已经变了」，不是动作本身执行失败：抛出它的位置都在动作之前，
    * 所以拿到它就意味着动作没有落地。
    *
-   * <p>消息保持历史文本 {@code SCREEN_TARGET_CHANGED}（主屏路径按消息透出给调用方），但类型化之后虚拟屏
-   * 侧可以把这种「未执行」精确映射成同一个错误码，而不是笼统的
+   * <p>消息保持历史文本 {@code SCREEN_TARGET_CHANGED}（按消息透出给调用方），但类型化之后可以把这种「未执行」
+   * 精确映射成同一个错误码，而不是笼统的
    * {@code ACCESSIBILITY_OPERATION_UNKNOWN}（#140）。
    */
   public static final class TargetChangedException extends IllegalStateException {
@@ -459,67 +459,6 @@ public class DshaAccessibilityService extends AccessibilityService {
 
   public static boolean isConnected() {
     return instance != null;
-  }
-
-  public static org.json.JSONObject virtualControl(
-      com.deepseekharness.app.vscreen.VirtualScreenAccessibility session,
-      int displayId,
-      String operation,
-      org.json.JSONObject args) {
-    return session.run(instance, displayId, operation, args);
-  }
-
-  /** 只读取指定虚拟显示的窗口，绝不回退到手机主屏。 */
-  public static AccessibilityNodeInfo virtualRoot(int displayId) {
-    if (instance == null || android.os.Build.VERSION.SDK_INT < 30 || displayId <= 0) return null;
-    AccessibilityNodeInfo root = displayRoot(instance, displayId);
-    try {
-      validateActionRoot(displayId, root);
-      return root;
-    } catch (Throwable rejected) {
-      if (root != null) root.recycle();
-      throw rejected;
-    }
-  }
-
-  public static String virtualDump(int displayId) {
-    if (instance == null) return "ACCESSIBILITY_UNAVAILABLE";
-    AccessibilityNodeInfo root = null;
-    try {
-      root = virtualRoot(displayId);
-      if (root == null) return "VIRTUAL_WINDOW_UNAVAILABLE";
-      StringBuilder out = new StringBuilder();
-      dumpNode(root, out, 0, new int[] {0});
-      return out.toString();
-    } catch (Throwable e) {
-      return "VIRTUAL_TREE_UNAVAILABLE";
-    } finally {
-      if (root != null) root.recycle();
-    }
-  }
-
-  public static String virtualInput(int displayId, String text) {
-    if (instance == null) return "ACCESSIBILITY_REQUIRED_FOR_UNICODE";
-    AccessibilityNodeInfo root = null, target = null;
-    try {
-      root = virtualRoot(displayId);
-      if (root == null) return "VIRTUAL_WINDOW_UNAVAILABLE";
-      target = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT);
-      if (target == null || !target.isEditable()) return "VIRTUAL_INPUT_NOT_FOCUSED";
-      android.os.Bundle args = new android.os.Bundle();
-      args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text);
-      return target.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
-          ? "OK"
-          : "VIRTUAL_INPUT_REJECTED";
-    } catch (TargetChangedException rejected) {
-      // 写入之前目标/运行状态就变了：没有输入落地，按「未执行」的稳定码返回（#140）。
-      return "SCREEN_TARGET_CHANGED";
-    } catch (Throwable e) {
-      return "VIRTUAL_INPUT_RESULT_UNKNOWN";
-    } finally {
-      if (target != null) target.recycle();
-      if (root != null) root.recycle();
-    }
   }
 
   /** 读当前屏幕：输出带序号、文本、可点击性与坐标的清单，供 agent 决定下一步点哪个。 */

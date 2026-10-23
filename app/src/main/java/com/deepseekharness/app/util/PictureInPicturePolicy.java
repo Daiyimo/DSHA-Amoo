@@ -9,8 +9,16 @@ public final class PictureInPicturePolicy {
       boolean allowed,
       boolean contentReady,
       boolean leavingForActivity,
-      boolean finishing) {
-    return supported && allowed && contentReady && !leavingForActivity && !finishing;
+      boolean finishing,
+      boolean taskActive) {
+    return supported
+        && allowed
+        && contentReady
+        && !leavingForActivity
+        && !finishing
+        // agent 任务执行期间不进画中画：被全屏应用盖住时正常退后台，
+        // 执行状态由屏幕顶部的任务胶囊（灵动岛）展示。
+        && !taskActive;
   }
 
   /** Android 要求宽高比位于 1:2.39 至 2.39:1，超长屏使用留边而不裁切。 */

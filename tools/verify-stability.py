@@ -174,7 +174,7 @@ def validate_software_receipt(report,current):
     required={'gradle-verification','runtime-input-contract','release-acceptance-contract','release-evidence-contract',
               'apk-assets','standard-elf','low-elf','standard-signature','low-signature',
               'plugin-upgrade-gate','recovery-apk','recovery-browser-overlay','recovery-profile-boot','mobile-modal',
-              'adb-flow','adb-vscreen-bridge','web-ui-host-fixtures','plugin-downloads',
+              'adb-flow','web-ui-host-fixtures','plugin-downloads',
               'third-party-notices','third-party-apk','bxroot-native-source','native-runtime-apk'}
     commands={row.get('name'):row for row in report.get('commands',[])}
     if not required.issubset(commands):raise ValueError('DELIVERY_CHECK_MISSING')
@@ -478,7 +478,6 @@ def main():
         run('release-acceptance-contract',[sys.executable,'-B','tools/test-release-acceptance.py'])
         run('release-evidence-contract',[sys.executable,'-B','tools/test-release-evidence.py'])
         run('adb-flow',[sys.executable,'-B','tools/test-adb-flow.py'])
-        run('adb-vscreen-bridge',[sys.executable,'-B','tools/test-adb-vscreen-bridge.py'])
         run('bxroot-native-source',[sys.executable,'-B','tools/bxroot/build.py','--check'])
         run('third-party-notices',[sys.executable,'-B','tools/check-third-party-notices.py',
                                    '--archive','app/src/main/assets/dsh-runtime.bin',

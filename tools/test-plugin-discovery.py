@@ -310,7 +310,7 @@ class DiscoveryTest(unittest.TestCase):
             self.assertTrue(items[name]['internal'])
         visible = [item for item in items.values() if not item['internal']]
         self.assertEqual({'dsh-device-shell-guide','dsh-task-notifier','dsh-status-overlay','dsh-web-mobile',
-                          'dsh-computer-use-android','dsh-auto-review','dsh-tool-vscreen'}, {item['name'] for item in visible})
+                          'dsh-computer-use-android','dsh-auto-review'}, {item['name'] for item in visible})
 
     def test_symlinked_shared_runtime_is_not_a_user_plugin(self):
         runtime = self.plugin('usr/local/lib/node_modules/@deepseek-ai/dsh/node_modules')

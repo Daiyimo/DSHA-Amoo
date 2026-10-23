@@ -17,7 +17,6 @@ public final class DeviceShellPolicy {
     FILE,
     STOP,
     SENSITIVE_READ,
-    VIRTUAL_SCREEN,
     ATOMIC,
     LAUNCH,
     DENY
@@ -184,10 +183,9 @@ public final class DeviceShellPolicy {
     if (name.equals("cmd")) return inspectCmd(args);
     if (name.equals("am") && args.size() == 2 && args.get(1).equals("get-current-user"))
       return plan(Kind.READ, args, Collections.emptyList());
-    // app_process can load arbitrary DEX code. The narrowly managed virtual-screen
-    // launcher has a separate typed entry point and is never accepted as a shell command.
+    // app_process can load arbitrary DEX code and is never accepted as a shell command.
     if (name.equals("app_process"))
-      return deny(com.deepseekharness.app.util.UiText.text("app_process 仅允许原生受管虚拟屏入口"));
+      return deny(com.deepseekharness.app.util.UiText.text("app_process 不允许作为设备命令执行"));
     // StepOS 全屏启动：应用必须显式带窗口模式启动，否则 StepOS 的 ActivityStarter
     // 钩子会把它收进 stepos-mini-window（画中画）。App 侧的
     // ActivityOptions.setLaunchWindowingMode 反射被 hidden-API 策略拒绝
@@ -255,41 +253,6 @@ public final class DeviceShellPolicy {
     if (name == null || !FILE.contains(name)) return deny("FILE_OPERATION_REQUIRED");
     args.set(0, name);
     return inspectFile(args);
-  }
-
-  /** Native-only operation: validate a launcher against PackageManager's current DSHA APK. */
-  public static Plan inspectVirtualScreenLaunch(String command, String installedApkPath) {
-    return inspectVirtualScreenLaunch(command, installedApkPath, null);
-  }
-
-  public static Plan inspectVirtualScreenLaunch(
-      String command, String installedApkPath, String expectedPackage) {
-    final List<String> args;
-    try {
-      args = split(command);
-    } catch (IllegalArgumentException error) {
-      return deny(error.getMessage());
-    }
-    if (args.isEmpty()) return deny(com.deepseekharness.app.util.UiText.text("虚拟屏启动命令为空"));
-    String name = executable(args.get(0));
-    if (!"app_process".equals(name))
-      return deny(com.deepseekharness.app.util.UiText.text("虚拟屏启动器无法核验"));
-    args.set(0, name);
-    // The child creates its own bearer secret after exec. Keeping the launcher argv
-    // free of secrets prevents disclosure through process listings and crash tools.
-    if (args.size() != 9
-        || !canonicalApkPath(installedApkPath)
-        || !SelfPackageIdentity.validName(expectedPackage)
-        || !args.get(1).equals("-Djava.class.path=" + installedApkPath)
-        || !args.get(2).equals("/system/bin")
-        || !args.get(3).equals("com.deepseekharness.app.vscreen.VirtualScreenCore")
-        || !args.get(4).equals("--launch")
-        || !args.get(5).equals("--port")
-        || !args.get(6).matches("8[0-9]{3}")
-        || !args.get(7).equals("--package")
-        || !args.get(8).equals(expectedPackage))
-      return deny(com.deepseekharness.app.util.UiText.text("虚拟屏启动参数无法核验"));
-    return plan(Kind.VIRTUAL_SCREEN, args, Collections.emptyList());
   }
 
   /** Android package-manager path syntax, kept pure so all transports share the same rule. */

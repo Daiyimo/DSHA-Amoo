@@ -29,7 +29,7 @@ public final class AccessibilityDumpBoundsTest {
 
   @Test
   public void reportableDropsReversedRectsEvenWhenTheNodeIsActionable() {
-    // issue #143：/app/vscreen/tree 在设置页只回一个可点击节点，bounds 是 (0,1832,0,1792) ——
+    // issue #143：读屏在设置页只回一个可点击节点，bounds 是 (0,1832,0,1792) ——
     // right == left 且 bottom < top，拿它去点屏幕只会点到别处，所以宁可一个节点都不报。
     assertFalse(AccessibilityDumpBounds.reportable(false, true, 0, 1832, 0, 1792));
     assertFalse(AccessibilityDumpBounds.reportable(true, true, 2207, 515, 1240, 572));

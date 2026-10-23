@@ -798,7 +798,6 @@ final class WebLifecycleController {
   /** 立即禁用自动拉起，实际停止在共享队列执行，回调在后台线程。 */
   public void stopWeb(Consumer<String> onStatus) {
     com.deepseekharness.app.HttpShellService.revokeScreenGrant(ctx);
-    com.deepseekharness.app.vscreen.VirtualScreenManager.from(ctx).stop();
     enqueueStop(onStatus);
   }
 
@@ -850,7 +849,6 @@ final class WebLifecycleController {
   private Future<?> enqueueStop(
       Consumer<String> onStatus, WebProcessManager.ForceCandidate forcedCandidate) {
     com.deepseekharness.app.HttpShellService.revokeScreenGrant(ctx);
-    com.deepseekharness.app.vscreen.VirtualScreenManager.from(ctx).stop();
     synchronized (lifecycle) {
       if (lifecycle.isStopping()) return state.stopTask;
       long previous = lifecycle.generation();

@@ -70,32 +70,16 @@ public final class AdbBridge {
 
   /** 调用方已经持有环境凭据；包括超时回收在内，进程确实退出后才结束操作。 */
   private static String execOwned(ProotBootstrap proot, String command, long timeoutMs) {
-    return execOwned(proot, command, timeoutMs, null);
-  }
-
-  /** A bounded, one-use input pipe; currently reserved for the 48-byte native VScreen lease. */
-  private static String execOwned(
-      ProotBootstrap proot, String command, long timeoutMs, byte[] pipedInput) {
     if (!EnvironmentTaskGate.canExecuteCurrentThread())
       throw new IllegalStateException(com.deepseekharness.app.util.UiText.text("ADB 命令缺少环境任务凭据"));
     if (Thread.currentThread().isInterrupted())
       return com.deepseekharness.app.util.UiText.text("ADB_CANCELLED: 操作已取消，未启动命令");
-    if (pipedInput != null && pipedInput.length != 48)
-      return "[POLICY_BLOCKED] Invalid native virtual-screen ticket length\n[EXIT=126]";
     StringBuilder output = new StringBuilder();
     Process process = null;
     com.deepseekharness.app.core.RuntimeTasks work =
         com.deepseekharness.app.core.RuntimeTasks.begin();
     try {
-      process =
-          pipedInput == null
-              ? proot.execRootfsForInstall(command)
-              : proot.execRootfsForInstallWithPipedInput(command);
-      if (pipedInput != null) {
-        try (java.io.OutputStream input = process.getOutputStream()) {
-          input.write(pipedInput);
-        }
-      }
+      process = proot.execRootfsForInstall(command);
       int exit =
           InstallProcess.read(
               process,
@@ -133,23 +117,6 @@ public final class AdbBridge {
 
   private static String execOwned(ProotBootstrap proot, String command) {
     return execOwned(proot, command, 60_000);
-  }
-
-  /** 只供 VirtualScreenManager 使用的受管 app_process 启动入口；票据只经 stdin 传递。 */
-  public static String executeVirtualScreen(Context ctx, String command, String ticket) {
-    if (ticket == null || !ticket.matches("[a-f0-9]{48}"))
-      return "[POLICY_BLOCKED] Invalid native virtual-screen ticket\n[EXIT=126]";
-    ProotBootstrap proot = com.deepseekharness.app.core.HarnessController.get(ctx).proot();
-    return environmentResult(
-        proot,
-        com.deepseekharness.app.util.UiText.text("启动虚拟屏核心"),
-        () ->
-            execOwned(
-                proot,
-                "python3 /root/.dsh/adb-shell.py --vscreen-launch --timeout 20 --connect-timeout 20 -- "
-                    + ShellQuote.arg(command),
-                60_000,
-                ticket.getBytes(StandardCharsets.US_ASCII)));
   }
 
   public static boolean injected(ProotBootstrap proot) {

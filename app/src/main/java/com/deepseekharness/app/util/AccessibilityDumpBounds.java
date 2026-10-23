@@ -5,8 +5,8 @@ package com.deepseekharness.app.util;
  *
  * <p>文字节点可以零面积：{@code (0,370,0,499)} 这种只有高度的矩形仍是合法输入。只有反序矩形
  * （{@code right < left} 或 {@code bottom < top}）不是「空节点」而是噪声——它的四条边没有一条
- * 能用来定位，调用方拿它去点屏幕只会点到别处。主屏 dump 一直按这条不变量丢弃节点；虚拟屏
- * tree 直到 issue #143 才补上：同一份判定写在两处，只有一处跟着修。
+ * 能用来定位，调用方拿它去点屏幕只会点到别处。dump 路径一直按这条不变量丢弃节点；直到 issue #143
+ * 才补上：同一份判定写在两处，只有一处跟着修。
  */
 public final class AccessibilityDumpBounds {
   private AccessibilityDumpBounds() {}

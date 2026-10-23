@@ -7,7 +7,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 CLIENTS = (
     'dsh-device-shell-guide/lib/index.js', 'dsh-computer-use-android/lib/server.cjs',
-    'dsh-task-notifier/lib/index.js', 'dsh-tool-vscreen/lib/server.cjs',
+    'dsh-task-notifier/lib/index.js',
 )
 
 

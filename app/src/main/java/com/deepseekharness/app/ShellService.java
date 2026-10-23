@@ -31,10 +31,6 @@ extends IShellService.Stub {
         try{return DeviceShellExecutor.execute(cmd,this::executeArgv,plan.kind==com.deepseekharness.app.util.DeviceShellPolicy.Kind.STOP?identity():null);}
         catch(java.io.IOException error){return "[POLICY_BLOCKED] "+SensitiveData.redact(error.getMessage())+"\n[EXIT=126]";}
     }
-    @Override public String execVirtualScreen(String command) {
-        try{return DeviceShellExecutor.executeVirtualScreen(command,this::executeArgv,identity());}
-        catch(java.io.IOException error){return "[POLICY_BLOCKED] "+SensitiveData.redact(error.getMessage())+"\n[EXIT=126]";}
-    }
     private com.deepseekharness.app.util.SelfPackageIdentity identity()throws java.io.IOException{
         return launchIdentity!=null?launchIdentity:com.deepseekharness.app.runtime.PrivilegedPackageContext.callerIdentity(ShellService.class,packageContext);
     }

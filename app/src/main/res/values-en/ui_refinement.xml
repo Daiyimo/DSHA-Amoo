@@ -19,4 +19,5 @@
   <string name="ui134_shizuku_hint">Start Shizuku in its manager, then authorize DSHA here. Usually restart the service after reboot.</string>
   <string name="ui134_adb_hint">Android 11+: pair wireless debugging on the same Wi-Fi. No root needed. Verify or re-pair after network changes.</string>
   <string name="ui134_screen_setup">Set up screen control · Two steps</string>
+  <string name="ui134_task_island">Show task status capsule</string>
 </resources>

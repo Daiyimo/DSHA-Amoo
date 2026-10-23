@@ -71,7 +71,7 @@ public class BridgeConfirmationsTest {
   @Test
   public void anExplicitDenialIsDistinguishableFromNobodyAnswering() throws Exception {
     // 桥必须能把"用户点了拒绝"与"用户没来得及回答"报成不同结果（issue #123：
-    // /app/vscreen/create 等授权时挂起 60 秒，与真正被拒绝共用 USER_REJECTED）。
+    // 屏幕操作授权时挂起 60 秒，与真正被拒绝共用 USER_REJECTED）。
     BridgeConfirmations gate = new BridgeConfirmations();
     var denied = gate.begin(11);
     assertTrue(gate.resolve(11, denied.identity, false));

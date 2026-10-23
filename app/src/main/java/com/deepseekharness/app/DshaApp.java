@@ -73,9 +73,6 @@ public class DshaApp extends Application
           com.deepseekharness.app.core.PluginRepository>
       pluginOwner = new com.deepseekharness.app.util.ApplicationOwner<>();
   private final com.deepseekharness.app.util.ApplicationOwner<
-          com.deepseekharness.app.vscreen.VirtualScreenManager>
-      virtualScreenOwner = new com.deepseekharness.app.util.ApplicationOwner<>();
-  private final com.deepseekharness.app.util.ApplicationOwner<
           com.deepseekharness.app.data.PortableSettings>
       portableSettingsOwner = new com.deepseekharness.app.util.ApplicationOwner<>();
 
@@ -89,11 +86,6 @@ public class DshaApp extends Application
 
   public com.deepseekharness.app.core.PluginRepository pluginRepository() {
     return pluginOwner.get(() -> new com.deepseekharness.app.core.PluginRepository(this));
-  }
-
-  public com.deepseekharness.app.vscreen.VirtualScreenManager virtualScreenManager() {
-    return virtualScreenOwner.get(
-        () -> new com.deepseekharness.app.vscreen.VirtualScreenManager(this));
   }
 
   @Override

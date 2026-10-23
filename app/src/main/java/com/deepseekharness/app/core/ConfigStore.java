@@ -294,14 +294,6 @@ public class ConfigStore {
         .apply();
   }
 
-  public boolean isExecutionOnVirtualDisplay() {
-    return flag(Constants.KEY_EXECUTION_ON_VIRTUAL_DISPLAY, false);
-  }
-
-  public void setExecutionOnVirtualDisplay(boolean value) {
-    prefs.edit().putBoolean(Constants.KEY_EXECUTION_ON_VIRTUAL_DISPLAY, value).apply();
-  }
-
   public boolean isBackupKey() {
     return flag(Constants.KEY_BACKUP_KEY, true);
   }

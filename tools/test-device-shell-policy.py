@@ -185,23 +185,6 @@ class PolicyTest(unittest.TestCase):
         self.assertFalse(policy.sms_provider_descendant('/data/user/0/com.example.app', RULES))
         self.assertFalse(policy.sms_provider_descendant('/data/data/com.example.app', RULES))
 
-    def test_typed_virtual_screen_requires_ticket_and_exact_managed_source(self):
-        source = '/data/app/com.dsh.client/base.apk'
-        ticket = '0123456789abcdef0123456789abcdef0123456789abcdef'
-        plan = dict(version=1, kind='VIRTUAL_SCREEN', argv=['app_process', '-Djava.class.path=' + source,
-            '/system/bin', 'com.deepseekharness.app.vscreen.VirtualScreenCore', '--launch', '--port', '8800', '--package', 'com.dsh.clienu'],
-            sourceApk=source, selfPackage="com.dsh.clienu", nativeAuthorization='managed-vscreen-start', nativeTicket=ticket, su=False)
-        self.execute(plan)
-        self.assertEqual('/system/bin/app_process -Djava.class.path=/data/app/com.dsh.client/base.apk /system/bin com.deepseekharness.app.vscreen.VirtualScreenCore --launch --port 8800 --package com.dsh.clienu', self.sent[-1])
-        self.sent.clear()
-        for change in (
-                {'nativeTicket': ''}, {'nativeAuthorization': 'generic'}, {'su': True},
-                {'sourceApk': '/data/app/attacker/base.apk'},
-                {'argv': plan['argv'] + ['--token', 'a' * 48]}):
-            bad = dict(plan); bad.update(change)
-            with self.assertRaises(policy.Blocked): self.execute(bad)
-        self.assertEqual([], self.sent)
-
     def test_refresh_groups_before_each_user_app_stop(self):
         plan = self.plan('STOP', ['am', 'force-stop', 'example.app'], ['example.app'])
         plan['apps'] = [dict(name='android', uid=12345, system=False)]

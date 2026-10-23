@@ -75,12 +75,6 @@ public final class Constants {
 
   public static final String KEY_PICTURE_IN_PICTURE_LAYOUT = "picture_in_picture_layout";
 
-  /**
-   * 任务执行期间把对话窗口搬到虚拟屏，主屏只剩目标应用。默认关闭（保持画中画）。
-   * 虚拟屏拿不到时自动回落到画中画，不会让窗口消失。
-   */
-  public static final String KEY_EXECUTION_ON_VIRTUAL_DISPLAY = "execution_on_virtual_display";
-
   /** 备份是否包含 API key。 */
   public static final String KEY_BACKUP_KEY = "backup_key";
 

@@ -98,6 +98,7 @@ public class ConfigFragment extends Fragment {
     CompoundButton proroot = v.findViewById(R.id.config_proroot);
     CompoundButton lan = v.findViewById(R.id.config_lan_mode);
     CompoundButton overlay = v.findViewById(R.id.config_overlay_stream);
+    CompoundButton island = v.findViewById(R.id.config_task_island);
     Button save = v.findViewById(R.id.config_save);
 
     // 高级项折叠
@@ -212,6 +213,7 @@ public class ConfigFragment extends Fragment {
     proroot.setChecked(c.isProroot());
     lan.setChecked(c.isLanMode());
     overlay.setChecked(pref(ctx, "overlay_stream", false));
+    island.setChecked(com.deepseekharness.app.AgentTaskIsland.enabled(ctx));
     bindChoice(
         v,
         R.id.config_runtime_choice,
@@ -351,6 +353,9 @@ public class ConfigFragment extends Fragment {
                   if (!overlayEnabled) OverlayController.teardown(ctx.getApplicationContext());
                   else if (OverlayController.permitted(ctx))
                     OverlayController.applyStyleNow(ctx.getApplicationContext());
+                  // 任务胶囊开关：关掉时立刻撤下已在显示的悬浮窗，行为与悬浮条一致。
+                  com.deepseekharness.app.AgentTaskIsland.setEnabled(
+                      ctx.getApplicationContext(), island.isChecked());
                   applyLanMode(c, lan.isChecked());
                   if (lan.isChecked() && getActivity() instanceof MainActivity)
                     ((MainActivity) getActivity()).requestLocalNetwork();

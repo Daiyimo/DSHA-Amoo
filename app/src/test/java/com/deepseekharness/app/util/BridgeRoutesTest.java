@@ -26,15 +26,11 @@ public final class BridgeRoutesTest {
   @Test
   public void namespacesDoNotCaptureTheirParentsOrEncodedSlash() {
     assertEquals(BridgeRoutes.Route.UI, BridgeRoutes.match("/app/ui/shot"));
-    assertEquals(BridgeRoutes.Route.VSCREEN, BridgeRoutes.match("/app/vscreen/status"));
     for (String invalid :
         new String[] {
           "/app/ui",
-          "/app/vscreen",
           "/app/ui%2fshot",
-          "/app/vscreen%2fstatus",
-          "/app/ui-extra/tap",
-          "/app/vscreen-extra/tap"
+          "/app/ui-extra/tap"
         }) {
       assertEquals(invalid, BridgeRoutes.Route.UNKNOWN, BridgeRoutes.match(invalid));
     }
@@ -47,8 +43,7 @@ public final class BridgeRoutesTest {
           BridgeRoutes.Route.EXEC,
           BridgeRoutes.Route.CONFIRM,
           BridgeRoutes.Route.DEVICE_PLAN,
-          BridgeRoutes.Route.DEVICE_EXECUTE,
-          BridgeRoutes.Route.DEVICE_VSCREEN_START
+          BridgeRoutes.Route.DEVICE_EXECUTE
         }) {
       assertTrue(route.name(), route.commandParameter());
     }
@@ -56,8 +51,7 @@ public final class BridgeRoutesTest {
       if (route == BridgeRoutes.Route.EXEC
           || route == BridgeRoutes.Route.CONFIRM
           || route == BridgeRoutes.Route.DEVICE_PLAN
-          || route == BridgeRoutes.Route.DEVICE_EXECUTE
-          || route == BridgeRoutes.Route.DEVICE_VSCREEN_START) continue;
+          || route == BridgeRoutes.Route.DEVICE_EXECUTE) continue;
       assertFalse(route.name(), route.commandParameter());
     }
   }

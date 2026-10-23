@@ -28,17 +28,11 @@ public final class ForegroundActivity implements Application.ActivityLifecycleCa
   @Override
   public void onActivityResumed(Activity activity) {
     if (activity instanceof FragmentActivity) CURRENT.resumed((FragmentActivity) activity);
-    com.deepseekharness.app.vscreen.VirtualScreenManager.from(activity)
-        .foreground()
-        .resume(activity);
     HarnessService.ensureRuntimeForeground(activity);
   }
 
   private void left(Activity activity) {
     if (activity instanceof FragmentActivity) CURRENT.left((FragmentActivity) activity);
-    com.deepseekharness.app.vscreen.VirtualScreenManager.from(activity)
-        .foreground()
-        .pause(activity);
   }
 
   @Override

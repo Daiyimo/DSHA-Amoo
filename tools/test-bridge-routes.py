@@ -52,13 +52,11 @@ public class BridgeRouteProbe {
 
     def test_all_public_endpoints_and_command_metadata(self):
         expected = {
-            '/device/vscreen/start': 'DEVICE_VSCREEN_START:true',
-            '/device/vscreen/commit': 'DEVICE_VSCREEN_COMMIT:false',
             '/device/plan': 'DEVICE_PLAN:true',
             '/device/execute': 'DEVICE_EXECUTE:true',
             '/app/notify': 'NOTIFY:false', '/app/toast': 'TOAST:false',
             '/app/readfile': 'READ_FILE:false', '/health': 'HEALTH:false',
-            '/app/ui/dump': 'UI:false', '/app/vscreen/status': 'VSCREEN:false',
+            '/app/ui/dump': 'UI:false',
             '/app/device': 'DEVICE:false', '/app/apps': 'APPS:false',
             '/app/launch': 'LAUNCH:false', '/app/clip': 'CLIP:false',
             '/app/share': 'SHARE:false', '/app/open': 'OPEN:false',
@@ -77,8 +75,8 @@ public class BridgeRouteProbe {
             '/app/readfileXXX', '/app/readfile/child', '/app/share2',
             '/app/export/child', '/app/overlay/reply', '/app/sensorsXXX',
             '/app/sensor/child', '/exec/child', '/device/execute/child',
-            '/app/ui', '/app/vscreen', '/app/ui%2fdump',
-            '/app/vscreen%2fstatus', '/app/ui-extra/tap',
+            '/app/ui', '/app/ui%2fdump',
+            '/app/ui-extra/tap',
         )
         self.assertEqual(['UNKNOWN:false'] * len(invalid), self.routes(*invalid))
 
@@ -88,13 +86,12 @@ public class BridgeRouteProbe {
         method = method.split('private String dispatch(', 1)[0]
         self.assertLess(method.index('HttpProtocol.readHead('),
                         method.index('BridgeRoutes.match(route)'))
-        self.assertLess(method.index('request.method.equals("POST")'),
+        self.assertLess(method.index('request.method.equals("GET")'),
                         method.index('BridgeRoutes.match(route)'))
         self.assertLess(method.index('BridgeCredentialAuth.authorized('),
                         method.index('dispatch(selected, bridgeRequest)'))
         self.assertLess(method.index('RuntimeTasks.begin()'),
                         method.index('dispatch(selected, bridgeRequest)'))
-        self.assertIn('VscreenBridgeRequest.readPost(', src)
         self.assertIn('ROUTE_HANDLERS.get(route)', src)
         route_src = (ROOT / 'app/src/main/java/com/deepseekharness/app/util/BridgeRoutes.java').read_text(encoding='utf-8')
         declared = set(re.findall(r'\b([A-Z_]+)\((?:true|false)\)',
@@ -104,44 +101,6 @@ public class BridgeRouteProbe {
         handlers = set(registered)
         self.assertEqual(declared - {'UNKNOWN'}, handlers,
                          '新增路由必须注册实际处理器，UNKNOWN 只返回历史错误')
-
-class VirtualRouteBehavior(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.temp = tempfile.TemporaryDirectory(prefix='dsha-vscreen-routes-')
-        cls.addClassCleanup(cls.temp.cleanup)
-        cls.java = shutil.which('java')
-        javac = shutil.which('javac')
-        if not cls.java or not javac:
-            raise RuntimeError('路由行为测试需要 JDK 17+ 的 java/javac')
-        probe = Path(cls.temp.name) / 'RouteProbe.java'
-        probe.write_text('''import com.deepseekharness.app.util.VirtualScreenRoutes;
-public class RouteProbe { public static void main(String[] args) {
-    for (String route : args) { String result = VirtualScreenRoutes.operation(route);
-        System.out.println(result.isEmpty() ? "UNKNOWN_ROUTE" : result); }
-} }''', encoding='utf-8')
-        subprocess.run([javac, '--release', '17', '-encoding', 'UTF-8', '-d', cls.temp.name,
-                        str(ROOT / 'app/src/main/java/com/deepseekharness/app/util/VirtualScreenRoutes.java'),
-                        str(probe)], check=True, capture_output=True, text=True)
-
-    def test_actual_java_dispatch_rejects_nested_suffixed_and_unknown_paths(self):
-        operations = ('create', 'status', 'launch', 'tree', 'node', 'editor', 'edit', 'submit',
-                      'touch', 'preview', 'see', 'tap', 'swipe', 'key', 'type', 'close')
-        routes, expected = [], []
-        for operation in operations:
-            routes.append('/app/vscreen/' + operation)
-            expected.append(operation)
-            for invalid in ('/app/vscreen/unknown/' + operation, '/app/vscreen/' + operation + 'XXX',
-                            '/app/vscreen//' + operation, '/app/vscreen/../' + operation,
-                            '/app/vscreen/' + operation + '/', '/app/vscreen%2f' + operation):
-                routes.append(invalid)
-                expected.append('UNKNOWN_ROUTE')
-        routes.extend(('/app/vscreen/unknown', '/app/vscreen/', '/app/vscreen/status?fake=1'))
-        expected.extend(('UNKNOWN_ROUTE',) * 3)
-        result = subprocess.run([self.java, '-cp', self.temp.name, 'RouteProbe', *routes],
-                                check=True, capture_output=True, text=True)
-        self.assertEqual(expected, result.stdout.splitlines())
-
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

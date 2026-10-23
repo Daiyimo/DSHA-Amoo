@@ -100,25 +100,6 @@ public final class RootShell {
     return runPrivileged(ctx, command, authorizedSmsUser, "");
   }
 
-  /** Native-only launcher path. Generic RootShell.exec rejects app_process unconditionally. */
-  public static String execVirtualScreen(Context ctx, String command) {
-    if (!enabled(ctx))
-      return com.deepseekharness.app.util.UiText.text(
-          "[POLICY_BLOCKED] 未允许 root shell\n[EXIT=126]");
-    try {
-      String source = ctx.getApplicationInfo().sourceDir;
-      String canonical = new File(source).getCanonicalPath();
-      if (!source.equals(canonical)
-          || !DeviceShellPolicy.inspectVirtualScreenLaunch(command, canonical, ctx.getPackageName())
-              .allowed())
-        return com.deepseekharness.app.util.UiText.text("[POLICY_BLOCKED] 虚拟屏启动参数无法核验\n[EXIT=126]");
-    } catch (Exception invalid) {
-      return com.deepseekharness.app.util.UiText.text(
-          "[POLICY_BLOCKED] 无法核验 DSHA 安装包路径\n[EXIT=126]");
-    }
-    return runPrivileged(ctx, command, -1, "virtual-screen-start");
-  }
-
   private static String runPrivileged(
       Context ctx, String command, int authorizedSmsUser, String operation) {
     String su = executable();

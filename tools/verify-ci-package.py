@@ -12,7 +12,7 @@ REQUIRED_CHECKS = {
     'gradle-verification', 'runtime-input-contract', 'release-acceptance-contract',
     'apk-assets', 'standard-elf', 'low-elf', 'plugin-upgrade-gate',
     'recovery-apk', 'recovery-browser-overlay', 'recovery-profile-boot',
-    'mobile-modal', 'adb-flow', 'adb-vscreen-bridge', 'web-ui-host-fixtures',
+    'mobile-modal', 'adb-flow', 'web-ui-host-fixtures',
     'plugin-downloads',
     'third-party-notices', 'third-party-apk',
     'bxroot-native-source', 'native-runtime-apk',

@@ -279,18 +279,4 @@ public final class ShizukuShell {
           "[EXECUTION_UNKNOWN] 设备命令结果未确认，不会自动重试：%s\n[EXIT=125]", failure);
     }
   }
-
-  /** Dedicated native-only operation; the generic Binder exec still rejects app_process. */
-  public static String execVirtualScreen(String command) {
-    if (!awaitReady(context, 8000))
-      return "[SHIZUKU_SERVICE_NOT_READY] " + status() + "\n[EXIT=124]";
-    IShellService current = service;
-    try {
-      return current.execVirtualScreen(command);
-    } catch (Throwable e) {
-      fail(e);
-      return com.deepseekharness.app.util.UiText.format(
-          "[EXECUTION_UNKNOWN] 虚拟屏启动结果未确认，不会自动重试：%s\n[EXIT=125]", failure);
-    }
-  }
 }

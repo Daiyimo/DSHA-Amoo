@@ -7317,7 +7317,7 @@
   },
   {
     "id": "m0898",
-    "zh": "DSHA 3090 桥端点清单（BRIDGE_PROTOCOL=%s）\n凭据由宿主写入 /root/.dsh/.bridge_headers；使用 curl -H @/root/.dsh/.bridge_headers，不把 token 写进 URL 或命令参数。\n带中文/空格的参数一律用 -G --data-urlencode，别手写 URL 编码。\n\n== 屏幕操作（无障碍服务，不需要 ADB/Shizuku）==\n读屏  curl -s -H @/root/.dsh/.bridge_headers \"127.0.0.1:3090/app/ui/dump\"\n      → 每行「[序号] \"文字\" 可点击 中心=(x,y) 区域=l,t,r,b」\n点按  curl -s -G 127.0.0.1:3090/app/ui/tap --data-urlencode \"text=设置\" -H @/root/.dsh/.bridge_headers\n      → 优先按文字点：控件位置随滚动/动画变，文字不变。没有文字才用 ?x=&y=\n输入  curl -s -G 127.0.0.1:3090/app/ui/input --data-urlencode \"text=内容\" -H @/root/.dsh/.bridge_headers\n      → 填到当前焦点框；没有焦点先 tap 一下输入框\n按键  /app/ui/key?name=back  （back/home/recents/notifications/quicksettings/lock）\n滑动  /app/ui/swipe?x1=500&y1=1500&x2=500&y2=500&ms=300\n截屏  /app/ui/screenshot   → 存 PNG 到应用截图目录并返回路径（不回 base64）\n节奏：每次点按/输入后先 dump 再决定下一步，别凭记忆连点。\n\n== 独立虚拟屏（Android 11+；坐标与文本输入必须带“刚看过的那一帧”）==\n/app/vscreen/create?orientation=portrait|landscape  创建虚拟屏\n/app/vscreen/status  查询 displayId、尺寸和 frameSeq（只读；它的 frameSeq 不能直接用于输入）\n/app/vscreen/launch?package=com.example.app  启动已安装应用\n/app/vscreen/see  取最新预览（可带 since=<帧号> 去重）；输入要带的是它返回的 frameSeq\n/app/vscreen/tap?x=&y=&frameSeq=&generation=  按坐标点按\n/app/vscreen/swipe?x1=&y1=&x2=&y2=&ms=&frameSeq=&generation=  滑动\n/app/vscreen/touch?stroke=&action=0..3&x=&y=&frameSeq=&generation=  连续触控（stroke 为 16–64 位十六进制）\n/app/vscreen/type?text=&frameSeq=&generation=  输入文本（中文需开启无障碍）\n/app/vscreen/key?keycode=3|4|66|67&frameSeq=&generation=  系统按键\n/app/vscreen/tree  读虚拟屏控件树；返回的 generation 与 frameSeq 供 node 使用\n/app/vscreen/node  POST JSON {generation,nodeId,action,text?}  按 nodeId 做语义操作（click/long_click/scroll_forward/scroll_backward/focus/set_text）；与帧号无关，不需要 frameSeq，nodeId 用一次即失效\n/app/vscreen/editor|edit|submit  POST JSON {generation,editorId,text?,start?,end?}  读写当前焦点输入框\n/app/vscreen/close  关闭并回收虚拟屏\n帧门：坐标与文本输入要求“刚 see 过的那一帧仍是最新帧”。帧间隔短于一次 see→输入的往返时它必然过期（约 20–60fps 的界面基本必失败，1fps 那种慢速重绘仍可能成功），返回 STALE_FRAME 并带 reason：FRAME_NOT_OBSERVED（没 see 过这一帧）/ FRAME_EXPIRED（已被新帧顶掉）/ OBSERVATION_TIMEOUT（超过 30 秒）。先 see 再输入；动态界面请改用 tree + node（不受帧率影响，也不用回传图片）。\n协议4：ok:true 带 targetChangedAfterExecution/runChangedAfterExecution 是已提交后状态变化，先观察实际状态。executionUnknown:true 或 INPUT_RESULT_UNKNOWN 表示动作可能已执行，不得自动重放。\n空屏时 frameSeq 恒为 0、see 返回 FRAME_NOT_READY —— 那是“屏上还没有内容”，不是创建失败。\n创建失败：VSCREEN_TRUSTED_DISPLAY_DENIED（该通道拿不到 ADD_TRUSTED_DISPLAY，请改用 Root 或无障碍通道）/ VSCREEN_DISPLAY_CREATE_FAILED / VSCREEN_PERMISSION_DENIED。\n等待授权不等于被拒绝：确认没等到回答返回 USER_NO_ANSWER（等用户点“允许”后再试一次），用户明确拒绝才是 USER_REJECTED，确认通道不可用返回 USER_CONFIRM_UNAVAILABLE。\n\n== 设备与应用 ==\n/app/device                     机型/系统/电量/网络/屏幕/存储/内存\n/app/apps                       全部已装应用，分用户应用与系统应用；可加 q/limit/user=1 筛选显示\n/app/launch?pkg=com.tencent.mm  启动应用\n/app/clip                       读剪贴板（需 App 在前台，系统限制）\n/app/clip + text=…              写剪贴板\n/app/readfile?path=/…          读取绝对路径的目录或文本，仍受 Android 权限限制；凭据区（.dsh/.ssh/.android）不可读\n设备文件写入请走下方受保护的设备 shell；普通 Download 文件可操作，DCIM/Pictures/Android/data/obb 只读。\n\n== 与用户交互 ==\n/app/ask?options=继续|取消 + q=…  弹窗阻塞等回答（最多三个选项）\n/app/notify?title=… + text=…      通知栏\n/app/toast + text=…               App 内提示\n/app/vibrate?ms=300               震动（长任务跑完叫醒用户）\n/app/share（text= 或 path=）      分享到其它应用\n/app/open?url=https://…           打开链接\n/app/export?path=/root/report.md  把产物交给用户 → 落 Download/DSHA；凭据区不可导出\n建议：需要用户拍板用 /app/ask 而不是干等；长任务结束用 notify 或 vibrate 叫人；\n产出报告用 /app/export，别只留在容器里。\n\n== 传感器与位置（默认关闭，需用户在配置页勾选）==\n/app/location（加 fresh=1 强制重新定位，可能等数秒）\n/app/sensors 列表 · /app/sensor?name=light 读值\n（light 环境光 lux / accel / gyro / magnet / pressure / proximity /\n gravity / rotation 姿态四元数 / steps 开机后步数）\n/app/torch?on=1 手电\n这三类返回 DISABLED（用户没开该能力）或 NO_PERMISSION（没授系统权限）时，\n照原话告诉用户去哪开，不要重试 —— 重试不会让开关自己变。\n\n== 元信息 ==\n/app/version                          桥协议版本 + App 版本（特性检测用）\n/app/help                             本清单\n\n== 插件状态 ==\n/app/plugins                          读回上次上报的加载状态\n/app/plugins?loaded=a,b&failed=c      上报（插件侧用）\n\n== 设备 shell（自动选择 root / Shizuku / ADB）==\n/root/dsh-bin/adb-shell \"命令\"        用 id 核验实际身份\n包装命令不存在时：python3 /root/.dsh/adb-shell.py \"命令\"\n短信只允许当前 Android 用户的 content query --uri content://sms，默认关闭；设置 → 设备能力授权可开启或撤销。\n短信预授权可能返回正文及验证码；不允许发送、修改或删除，Android 仍可拒绝访问。Shizuku 不执行此敏感查询。\n仅执行已识别的单条命令；允许读取各目录和明确路径的普通文件操作。禁止脚本、管道、重定向、未知命令。\n根目录及系统目录只读；禁止块设备/分区、SELinux、系统设置写入、挂载和刷机操作。\n结束进程前自动刷新全量用户/系统应用清单；普通用户应用直接结束，系统应用与关键进程拦截。\n按完整包名调用 am force-stop / killall / pkill -x；kill 正数 PID 会核对 UID 后按包名停止。\n策略拦截返回 [POLICY_BLOCKED]/126；root 和旧确认开关不能放行。不可用其它解释器或 UI 绕过。\n报连不上/未配对：先看上面的 App 层接口能不能办成；确实必须 shell 才请用户到\n设置 → 设备能力授权中连接可用通道，别反复试同一条命令。\n不要用 /root/dsh-bin/adb 或裸 adb —— 那是守卫包装脚本，会失败。\n\n== root（--su）==\n已启用并经 root 管理器授权的 su 可直接执行，无需 ADB 配对；其次使用 Shizuku，再使用 ADB。\n--su 仅在明确需要 root 时使用，须先在设备能力授权页允许；同一设备保护策略始终生效。\n[EXECUTION_UNKNOWN] 表示命令可能已执行，先核对实际状态，不能切换通道或自动重放。\n",
+    "zh": "DSHA 3090 桥端点清单（BRIDGE_PROTOCOL=%s）\n凭据由宿主写入 /root/.dsh/.bridge_headers；使用 curl -H @/root/.dsh/.bridge_headers，不把 token 写进 URL 或命令参数。\n带中文/空格的参数一律用 -G --data-urlencode，别手写 URL 编码。\n\n== 屏幕操作（无障碍服务，不需要 ADB/Shizuku）==\n读屏  curl -s -H @/root/.dsh/.bridge_headers \"127.0.0.1:3090/app/ui/dump\"\n      → 每行「[序号] \"文字\" 可点击 中心=(x,y) 区域=l,t,r,b」\n点按  curl -s -G 127.0.0.1:3090/app/ui/tap --data-urlencode \"text=设置\" -H @/root/.dsh/.bridge_headers\n      → 优先按文字点：控件位置随滚动/动画变，文字不变。没有文字才用 ?x=&y=\n输入  curl -s -G 127.0.0.1:3090/app/ui/input --data-urlencode \"text=内容\" -H @/root/.dsh/.bridge_headers\n      → 填到当前焦点框；没有焦点先 tap 一下输入框\n按键  /app/ui/key?name=back  （back/home/recents/notifications/quicksettings/lock）\n滑动  /app/ui/swipe?x1=500&y1=1500&x2=500&y2=500&ms=300\n截屏  /app/ui/screenshot   → 存 PNG 到应用截图目录并返回路径（不回 base64）\n节奏：每次点按/输入后先 dump 再决定下一步，别凭记忆连点。\n\n== 设备与应用 ==\n/app/device                     机型/系统/电量/网络/屏幕/存储/内存\n/app/apps                       全部已装应用，分用户应用与系统应用；可加 q/limit/user=1 筛选显示\n/app/launch?pkg=com.tencent.mm  启动应用\n/app/clip                       读剪贴板（需 App 在前台，系统限制）\n/app/clip + text=…              写剪贴板\n/app/readfile?path=/…          读取绝对路径的目录或文本，仍受 Android 权限限制；凭据区（.dsh/.ssh/.android）不可读\n设备文件写入请走下方受保护的设备 shell；普通 Download 文件可操作，DCIM/Pictures/Android/data/obb 只读。\n\n== 与用户交互 ==\n/app/ask?options=继续|取消 + q=…  弹窗阻塞等回答（最多三个选项）\n/app/notify?title=… + text=…      通知栏\n/app/toast + text=…               App 内提示\n/app/vibrate?ms=300               震动（长任务跑完叫醒用户）\n/app/share（text= 或 path=）      分享到其它应用\n/app/open?url=https://…           打开链接\n/app/export?path=/root/report.md  把产物交给用户 → 落 Download/DSHA；凭据区不可导出\n建议：需要用户拍板用 /app/ask 而不是干等；长任务结束用 notify 或 vibrate 叫人；\n产出报告用 /app/export，别只留在容器里。\n\n== 传感器与位置（默认关闭，需用户在配置页勾选）==\n/app/location（加 fresh=1 强制重新定位，可能等数秒）\n/app/sensors 列表 · /app/sensor?name=light 读值\n（light 环境光 lux / accel / gyro / magnet / pressure / proximity /\n gravity / rotation 姿态四元数 / steps 开机后步数）\n/app/torch?on=1 手电\n这三类返回 DISABLED（用户没开该能力）或 NO_PERMISSION（没授系统权限）时，\n照原话告诉用户去哪开，不要重试 —— 重试不会让开关自己变。\n\n== 元信息 ==\n/app/version                          桥协议版本 + App 版本（特性检测用）\n/app/help                             本清单\n\n== 插件状态 ==\n/app/plugins                          读回上次上报的加载状态\n/app/plugins?loaded=a,b&failed=c      上报（插件侧用）\n\n== 设备 shell（自动选择 root / Shizuku / ADB）==\n/root/dsh-bin/adb-shell \"命令\"        用 id 核验实际身份\n包装命令不存在时：python3 /root/.dsh/adb-shell.py \"命令\"\n短信只允许当前 Android 用户的 content query --uri content://sms，默认关闭；设置 → 设备能力授权可开启或撤销。\n短信预授权可能返回正文及验证码；不允许发送、修改或删除，Android 仍可拒绝访问。Shizuku 不执行此敏感查询。\n仅执行已识别的单条命令；允许读取各目录和明确路径的普通文件操作。禁止脚本、管道、重定向、未知命令。\n根目录及系统目录只读；禁止块设备/分区、SELinux、系统设置写入、挂载和刷机操作。\n结束进程前自动刷新全量用户/系统应用清单；普通用户应用直接结束，系统应用与关键进程拦截。\n按完整包名调用 am force-stop / killall / pkill -x；kill 正数 PID 会核对 UID 后按包名停止。\n策略拦截返回 [POLICY_BLOCKED]/126；root 和旧确认开关不能放行。不可用其它解释器或 UI 绕过。\n报连不上/未配对：先看上面的 App 层接口能不能办成；确实必须 shell 才请用户到\n设置 → 设备能力授权中连接可用通道，别反复试同一条命令。\n不要用 /root/dsh-bin/adb 或裸 adb —— 那是守卫包装脚本，会失败。\n\n== root（--su）==\n已启用并经 root 管理器授权的 su 可直接执行，无需 ADB 配对；其次使用 Shizuku，再使用 ADB。\n--su 仅在明确需要 root 时使用，须先在设备能力授权页允许；同一设备保护策略始终生效。\n[EXECUTION_UNKNOWN] 表示命令可能已执行，先核对实际状态，不能切换通道或自动重放。\n",
     "en": "DSHA 3090 bridge endpoints (BRIDGE_PROTOCOL=\nProtocol 4: after execution, targetChangedAfterExecution/runChangedAfterExecution retain the real result. executionUnknown means an action may have executed: observe before retrying. Coordinate input requires the latest observed frame; node uses refreshed accessibility identity and accepts optional frameSeq.\n",
     "files": [
       "app/src/main/java/com/deepseekharness/app/HttpShellService.java"
@@ -25867,8 +25867,8 @@
     "id": "build156_2e39c95b00f5"
   },
   {
-    "zh": "DSHA 3090 桥端点清单（BRIDGE_PROTOCOL=%s）\n凭据由宿主写入 /root/.dsh/.bridge_headers；使用 curl -H @/root/.dsh/.bridge_headers，不把 token 写进 URL 或命令参数。\n带中文/空格的参数一律用 -G --data-urlencode，别手写 URL 编码。\n\n== 屏幕操作（无障碍服务，不需要 ADB/Shizuku）==\n读屏  curl -s -H @/root/.dsh/.bridge_headers \"127.0.0.1:3090/app/ui/dump\"\n      → 每行「[序号] \"文字\" 可点击 中心=(x,y) 区域=l,t,r,b」\n点按  curl -s -G 127.0.0.1:3090/app/ui/tap --data-urlencode \"text=设置\" -H @/root/.dsh/.bridge_headers\n      → 优先按文字点：控件位置随滚动/动画变，文字不变。没有文字才用 ?x=&y=\n输入  curl -s -G 127.0.0.1:3090/app/ui/input --data-urlencode \"text=内容\" -H @/root/.dsh/.bridge_headers\n      → 填到当前焦点框；没有焦点先 tap 一下输入框\n按键  /app/ui/key?name=back  （back/home/recents/notifications/quicksettings/lock）\n滑动  /app/ui/swipe?x1=500&y1=1500&x2=500&y2=500&ms=300\n截屏  /app/ui/screenshot   → 存 PNG 到应用截图目录并返回路径（不回 base64）\n节奏：每次点按/输入后先 dump 再决定下一步，别凭记忆连点。\n\n== 独立虚拟屏（Android 11+；坐标与文本输入必须带“刚看过的那一帧”）==\n/app/vscreen/create?orientation=portrait|landscape  创建虚拟屏\n/app/vscreen/status  查询 displayId、尺寸和 frameSeq（只读；它的 frameSeq 不能直接用于输入）\n/app/vscreen/launch?package=com.example.app  启动已安装应用\n/app/vscreen/see  取最新预览（可带 since=<帧号> 去重）；输入要带的是它返回的 frameSeq\n/app/vscreen/tap?x=&y=&frameSeq=&generation=  按坐标点按\n/app/vscreen/swipe?x1=&y1=&x2=&y2=&ms=&frameSeq=&generation=  滑动\n/app/vscreen/touch?stroke=&action=0..3&x=&y=&frameSeq=&generation=  连续触控（stroke 为 16–64 位十六进制）\n/app/vscreen/type?text=&frameSeq=&generation=  输入文本（中文需开启无障碍）\n/app/vscreen/key?keycode=3|4|66|67&frameSeq=&generation=  系统按键\n/app/vscreen/tree  读虚拟屏控件树；返回的 generation 与 frameSeq 供 node 使用\n/app/vscreen/node  POST JSON {generation,nodeId,action,text?}  按 nodeId 做语义操作（click/long_click/scroll_forward/scroll_backward/focus/set_text）；与帧号无关，不需要 frameSeq，nodeId 用一次即失效\n/app/vscreen/editor|edit|submit  POST JSON {generation,editorId,text?,start?,end?}  读写当前焦点输入框\n/app/vscreen/close  关闭并回收虚拟屏\n帧门：坐标与文本输入要求“刚 see 过的那一帧仍是最新帧”。帧间隔短于一次 see→输入的往返时它必然过期（约 20–60fps 的界面基本必失败，1fps 那种慢速重绘仍可能成功），返回 STALE_FRAME 并带 reason：FRAME_NOT_OBSERVED（没 see 过这一帧）/ FRAME_EXPIRED（已被新帧顶掉）/ OBSERVATION_TIMEOUT（超过 30 秒）。先 see 再输入；动态界面请改用 tree + node（不受帧率影响，也不用回传图片）。\n空屏时 frameSeq 恒为 0、see 返回 FRAME_NOT_READY —— 那是“屏上还没有内容”，不是创建失败。\n创建失败：VSCREEN_TRUSTED_DISPLAY_DENIED（该通道拿不到 ADD_TRUSTED_DISPLAY，请改用 Root 或无障碍通道）/ VSCREEN_DISPLAY_CREATE_FAILED / VSCREEN_PERMISSION_DENIED。\n等待授权不等于被拒绝：确认没等到回答返回 USER_NO_ANSWER（等用户点“允许”后再试一次），用户明确拒绝才是 USER_REJECTED，确认通道不可用返回 USER_CONFIRM_UNAVAILABLE。\n\n== 设备与应用 ==\n/app/device                     机型/系统/电量/网络/屏幕/存储/内存\n/app/apps                       全部已装应用，分用户应用与系统应用；可加 q/limit/user=1 筛选显示\n/app/launch?pkg=com.tencent.mm  启动应用\n/app/clip                       读剪贴板（需 App 在前台，系统限制）\n/app/clip + text=…              写剪贴板\n/app/readfile?path=/…          读取绝对路径的目录或文本，仍受 Android 权限限制；凭据区（.dsh/.ssh/.android）不可读\n设备文件写入请走下方受保护的设备 shell；普通 Download 文件可操作，DCIM/Pictures/Android/data/obb 只读。\n\n== 与用户交互 ==\n/app/ask?options=继续|取消 + q=…  弹窗阻塞等回答（最多三个选项）\n/app/notify?title=… + text=…      通知栏\n/app/toast + text=…               App 内提示\n/app/vibrate?ms=300               震动（长任务跑完叫醒用户）\n/app/share（text= 或 path=）      分享到其它应用\n/app/open?url=https://…           打开链接\n/app/export?path=/root/report.md  把产物交给用户 → 落 Download/DSHA；凭据区不可导出\n建议：需要用户拍板用 /app/ask 而不是干等；长任务结束用 notify 或 vibrate 叫人；\n产出报告用 /app/export，别只留在容器里。\n\n== 传感器与位置（默认关闭，需用户在配置页勾选）==\n/app/location（加 fresh=1 强制重新定位，可能等数秒）\n/app/sensors 列表 · /app/sensor?name=light 读值\n（light 环境光 lux / accel / gyro / magnet / pressure / proximity /\n gravity / rotation 姿态四元数 / steps 开机后步数）\n/app/torch?on=1 手电\n这三类返回 DISABLED（用户没开该能力）或 NO_PERMISSION（没授系统权限）时，\n照原话告诉用户去哪开，不要重试 —— 重试不会让开关自己变。\n\n== 元信息 ==\n/app/version                          桥协议版本 + App 版本（特性检测用）\n/app/help                             本清单\n\n== 插件状态 ==\n/app/plugins                          读回上次上报的加载状态\n/app/plugins?loaded=a,b&failed=c      上报（插件侧用）\n\n== 设备 shell（自动选择 root / Shizuku / ADB）==\n/root/dsh-bin/adb-shell \"命令\"        用 id 核验实际身份\n包装命令不存在时：python3 /root/.dsh/adb-shell.py \"命令\"\n短信只允许当前 Android 用户的 content query --uri content://sms，默认关闭；设置 → 设备能力授权可开启或撤销。\n短信预授权可能返回正文及验证码；不允许发送、修改或删除，Android 仍可拒绝访问。Shizuku 不执行此敏感查询。\n仅执行已识别的单条命令；允许读取各目录和明确路径的普通文件操作。禁止脚本、管道、重定向、未知命令。\n根目录及系统目录只读；禁止块设备/分区、SELinux、系统设置写入、挂载和刷机操作。\n结束进程前自动刷新全量用户/系统应用清单；普通用户应用直接结束，系统应用与关键进程拦截。\n按完整包名调用 am force-stop / killall / pkill -x；kill 正数 PID 会核对 UID 后按包名停止。\n策略拦截返回 [POLICY_BLOCKED]/126；root 和旧确认开关不能放行。不可用其它解释器或 UI 绕过。\n报连不上/未配对：先看上面的 App 层接口能不能办成；确实必须 shell 才请用户到\n设置 → 设备能力授权中连接可用通道，别反复试同一条命令。\n不要用 /root/dsh-bin/adb 或裸 adb —— 那是守卫包装脚本，会失败。\n\n== root（--su）==\n已启用并经 root 管理器授权的 su 可直接执行，无需 ADB 配对；其次使用 Shizuku，再使用 ADB。\n--su 仅在明确需要 root 时使用，须先在设备能力授权页允许；同一设备保护策略始终生效。\n[EXECUTION_UNKNOWN] 表示命令可能已执行，先核对实际状态，不能切换通道或自动重放。\n",
-    "en": "DSHA 3090 bridge endpoints (BRIDGE_PROTOCOL=%s）\nThe host writes credentials to /root/.dsh/.bridge_headers. Use curl -H @/root/.dsh/.bridge_headers; keep tokens out of URLs and command arguments.\nFor parameters containing Chinese text or spaces, use -G --data-urlencode instead of encoding the URL manually.\n\n== Screen control (accessibility service; no ADB/Shizuku required) ==\nRead screen  curl -s -H @/root/.dsh/.bridge_headers \"127.0.0.1:3090/app/ui/dump\"\n      → Each line: [index] \"text\" clickable center=(x,y) bounds=l,t,r,b\nTap  curl -s -G 127.0.0.1:3090/app/ui/tap --data-urlencode \"text=Settings\" -H @/root/.dsh/.bridge_headers\n      → Prefer tapping by text: positions change with scrolling and animation. Use ?x=&y= only when no text is available.\nInput  curl -s -G 127.0.0.1:3090/app/ui/input --data-urlencode \"text=content\" -H @/root/.dsh/.bridge_headers\n      → Types into the focused field. Tap an input field first if none is focused.\nKey  /app/ui/key?name=back  (back/home/recents/notifications/quicksettings/lock)\nSwipe  /app/ui/swipe?x1=500&y1=1500&x2=500&y2=500&ms=300\nScreenshot  /app/ui/screenshot   → save a PNG in the app's screenshot folder and return its path (not base64)\nAfter each tap or input, dump the screen again before deciding the next step. Do not tap repeatedly from memory.\n\n== Independent virtual display (Android 11+; coordinate and text input must carry the frame you just observed) ==\n/app/vscreen/create?orientation=portrait|landscape  Create a virtual display\n/app/vscreen/status  Query displayId, size and frameSeq (read-only; its frameSeq cannot be used for input)\n/app/vscreen/launch?package=com.example.app  Launch an installed application\n/app/vscreen/see  Get the latest preview (optional since=<frameSeq> to dedupe); input must carry the frameSeq it returns\n/app/vscreen/tap?x=&y=&frameSeq=&generation=  Tap by coordinate\n/app/vscreen/swipe?x1=&y1=&x2=&y2=&ms=&frameSeq=&generation=  Swipe\n/app/vscreen/touch?stroke=&action=0..3&x=&y=&frameSeq=&generation=  Continuous touch (stroke is 16-64 hex digits)\n/app/vscreen/type?text=&frameSeq=&generation=  Type text (CJK needs accessibility)\n/app/vscreen/key?keycode=3|4|66|67&frameSeq=&generation=  System key\n/app/vscreen/tree  Read the virtual display node tree; the returned generation and frameSeq feed node\n/app/vscreen/node  POST JSON {generation,nodeId,action,text?}  Semantic action by nodeId (click/long_click/scroll_forward/scroll_backward/focus/set_text); frame-independent, no frameSeq needed, a nodeId is single-use\n/app/vscreen/editor|edit|submit  POST JSON {generation,editorId,text?,start?,end?}  Read/write the focused input field\n/app/vscreen/close  Close and release the virtual display\nFrame gate: coordinate and text input require that the frame you just observed is still the newest one. When the frame interval is shorter than one see-to-input round trip (roughly 20-60fps screens) it is always stale, so the call returns STALE_FRAME with a reason: FRAME_NOT_OBSERVED (this frame was never observed) / FRAME_EXPIRED (a newer frame replaced it) / OBSERVATION_TIMEOUT (more than 30 seconds). Call see again before input; on a live screen use tree + node instead (frame-rate independent, no image round-trip).\nAn empty screen reports frameSeq 0 and see returns FRAME_NOT_READY - that means nothing is on screen yet, not a failed creation.\nCreation failures: VSCREEN_TRUSTED_DISPLAY_DENIED (this channel cannot hold ADD_TRUSTED_DISPLAY; use Root or the accessibility channel) / VSCREEN_DISPLAY_CREATE_FAILED / VSCREEN_PERMISSION_DENIED.\nWaiting for authorization is not a denial: an unanswered confirmation returns USER_NO_ANSWER (retry after the user taps Allow); only an explicit refusal returns USER_REJECTED, and an unusable confirmation channel returns USER_CONFIRM_UNAVAILABLE.\n\n== Device & apps ==\n/app/device                     Model / Android / battery / network / display / storage / memory\n/app/apps                       Installed apps, separated into user and system apps; filter with q/limit/user=1\n/app/launch?pkg=com.tencent.mm  Launch app\n/app/clip                       Read clipboard (app must be in foreground; Android restriction)\n/app/clip + text=…              Write clipboard\n/app/readfile?path=/…          Read a directory or text at an absolute path, subject to Android permissions; credential directories (.dsh/.ssh/.android) cannot be read\nUse the protected device shell below for device file writes. Ordinary Download files are writable; DCIM/Pictures/Android/data/obb remain read-only.\n\n== User interaction ==\n/app/ask?options=Continue|Cancel + q=…  Ask in a blocking dialog (up to three options)\n/app/notify?title=… + text=…      Notification\n/app/toast + text=…               In-app toast\n/app/vibrate?ms=300               Vibrate (notify the user after a long task)\n/app/share (text= or path=)      Share to another app\n/app/open?url=https://…           Open URL\n/app/export?path=/root/report.md  Export an artifact to Download/DSHA; credential directories cannot be exported\nUse /app/ask when a decision is needed, and notify or vibrate when a long task finishes.\nUse /app/export to deliver reports; do not leave them only in the container.\n\n== Sensors & location (off by default; enable in Configuration) ==\n/app/location (fresh=1 forces a new fix; may take a few seconds)\n/app/sensors lists sensors · /app/sensor?name=light reads a value\n(light: ambient lux / accel / gyro / magnet / pressure / proximity /\n gravity / rotation quaternion / steps since boot)\n/app/torch?on=1 Flashlight\nWhen these APIs return DISABLED (feature off) or NO_PERMISSION (system permission missing),\nTell the user exactly where to enable it. Do not retry; retrying cannot turn the setting on.\n\n== Metadata ==\n/app/version                          Bridge protocol + app version (feature detection)\n/app/help                             This endpoint list\n\n== Plugin status ==\n/app/plugins                          Read last reported loading status\n/app/plugins?loaded=a,b&failed=c      Report status (for plugins)\n\n== Device shell (selects root / Shizuku / ADB automatically) ==\n/root/dsh-bin/adb-shell \"command\"        Use id to verify the actual identity\nIf the wrapper is missing: python3 /root/.dsh/adb-shell.py \"command\"\nSMS queries only allow content query --uri content://sms for the current Android user. Off by default; enable or revoke in Device permissions.\nPreauthorized SMS queries may return message bodies and verification codes. Sending, editing and deleting are blocked; Android may still deny access. Shizuku does not run this sensitive query.\nOnly recognized single commands are allowed, including directory reads and ordinary file operations on explicit paths. Scripts, pipes, redirects and unknown commands are blocked.\nRoot and system directories are read-only. Block devices/partitions, SELinux changes, system setting writes, mounts and firmware flashing are blocked.\nRefresh the complete user/system app list before stopping processes. Ordinary user apps may be stopped; system apps and essential processes are protected.\nUse the full package name with am force-stop / killall / pkill -x. A positive PID with kill is checked against its UID before stopping by package name.\nPolicy blocks return [POLICY_BLOCKED]/126. Root and legacy confirmation switches cannot override them. Do not use another interpreter or the UI to bypass a block.\nIf a connection or pairing error occurs, first check whether the app-level APIs above can perform the task. Only if a shell is essential, ask the user to open\nSettings → Device permissions to connect an available channel. Do not keep retrying the same command.\nDo not use /root/dsh-bin/adb or bare adb; those are guarded wrappers and will fail.\n\n== root（--su）==\nWhen su is enabled and authorized by the root manager, commands run directly without ADB pairing. Otherwise, Shizuku is used before ADB.\nUse --su only when root is explicitly required and enabled in Device permissions. The same device protection policy always applies.\n[EXECUTION_UNKNOWN] means the command may have executed. Verify the actual state before proceeding; do not switch connections or replay automatically.\n",
+    "zh": "DSHA 3090 桥端点清单（BRIDGE_PROTOCOL=%s）\n凭据由宿主写入 /root/.dsh/.bridge_headers；使用 curl -H @/root/.dsh/.bridge_headers，不把 token 写进 URL 或命令参数。\n带中文/空格的参数一律用 -G --data-urlencode，别手写 URL 编码。\n\n== 屏幕操作（无障碍服务，不需要 ADB/Shizuku）==\n读屏  curl -s -H @/root/.dsh/.bridge_headers \"127.0.0.1:3090/app/ui/dump\"\n      → 每行「[序号] \"文字\" 可点击 中心=(x,y) 区域=l,t,r,b」\n点按  curl -s -G 127.0.0.1:3090/app/ui/tap --data-urlencode \"text=设置\" -H @/root/.dsh/.bridge_headers\n      → 优先按文字点：控件位置随滚动/动画变，文字不变。没有文字才用 ?x=&y=\n输入  curl -s -G 127.0.0.1:3090/app/ui/input --data-urlencode \"text=内容\" -H @/root/.dsh/.bridge_headers\n      → 填到当前焦点框；没有焦点先 tap 一下输入框\n按键  /app/ui/key?name=back  （back/home/recents/notifications/quicksettings/lock）\n滑动  /app/ui/swipe?x1=500&y1=1500&x2=500&y2=500&ms=300\n截屏  /app/ui/screenshot   → 存 PNG 到应用截图目录并返回路径（不回 base64）\n节奏：每次点按/输入后先 dump 再决定下一步，别凭记忆连点。\n\n== 设备与应用 ==\n/app/device                     机型/系统/电量/网络/屏幕/存储/内存\n/app/apps                       全部已装应用，分用户应用与系统应用；可加 q/limit/user=1 筛选显示\n/app/launch?pkg=com.tencent.mm  启动应用\n/app/clip                       读剪贴板（需 App 在前台，系统限制）\n/app/clip + text=…              写剪贴板\n/app/readfile?path=/…          读取绝对路径的目录或文本，仍受 Android 权限限制；凭据区（.dsh/.ssh/.android）不可读\n设备文件写入请走下方受保护的设备 shell；普通 Download 文件可操作，DCIM/Pictures/Android/data/obb 只读。\n\n== 与用户交互 ==\n/app/ask?options=继续|取消 + q=…  弹窗阻塞等回答（最多三个选项）\n/app/notify?title=… + text=…      通知栏\n/app/toast + text=…               App 内提示\n/app/vibrate?ms=300               震动（长任务跑完叫醒用户）\n/app/share（text= 或 path=）      分享到其它应用\n/app/open?url=https://…           打开链接\n/app/export?path=/root/report.md  把产物交给用户 → 落 Download/DSHA；凭据区不可导出\n建议：需要用户拍板用 /app/ask 而不是干等；长任务结束用 notify 或 vibrate 叫人；\n产出报告用 /app/export，别只留在容器里。\n\n== 传感器与位置（默认关闭，需用户在配置页勾选）==\n/app/location（加 fresh=1 强制重新定位，可能等数秒）\n/app/sensors 列表 · /app/sensor?name=light 读值\n（light 环境光 lux / accel / gyro / magnet / pressure / proximity /\n gravity / rotation 姿态四元数 / steps 开机后步数）\n/app/torch?on=1 手电\n这三类返回 DISABLED（用户没开该能力）或 NO_PERMISSION（没授系统权限）时，\n照原话告诉用户去哪开，不要重试 —— 重试不会让开关自己变。\n\n== 元信息 ==\n/app/version                          桥协议版本 + App 版本（特性检测用）\n/app/help                             本清单\n\n== 插件状态 ==\n/app/plugins                          读回上次上报的加载状态\n/app/plugins?loaded=a,b&failed=c      上报（插件侧用）\n\n== 设备 shell（自动选择 root / Shizuku / ADB）==\n/root/dsh-bin/adb-shell \"命令\"        用 id 核验实际身份\n包装命令不存在时：python3 /root/.dsh/adb-shell.py \"命令\"\n短信只允许当前 Android 用户的 content query --uri content://sms，默认关闭；设置 → 设备能力授权可开启或撤销。\n短信预授权可能返回正文及验证码；不允许发送、修改或删除，Android 仍可拒绝访问。Shizuku 不执行此敏感查询。\n仅执行已识别的单条命令；允许读取各目录和明确路径的普通文件操作。禁止脚本、管道、重定向、未知命令。\n根目录及系统目录只读；禁止块设备/分区、SELinux、系统设置写入、挂载和刷机操作。\n结束进程前自动刷新全量用户/系统应用清单；普通用户应用直接结束，系统应用与关键进程拦截。\n按完整包名调用 am force-stop / killall / pkill -x；kill 正数 PID 会核对 UID 后按包名停止。\n策略拦截返回 [POLICY_BLOCKED]/126；root 和旧确认开关不能放行。不可用其它解释器或 UI 绕过。\n报连不上/未配对：先看上面的 App 层接口能不能办成；确实必须 shell 才请用户到\n设置 → 设备能力授权中连接可用通道，别反复试同一条命令。\n不要用 /root/dsh-bin/adb 或裸 adb —— 那是守卫包装脚本，会失败。\n\n== root（--su）==\n已启用并经 root 管理器授权的 su 可直接执行，无需 ADB 配对；其次使用 Shizuku，再使用 ADB。\n--su 仅在明确需要 root 时使用，须先在设备能力授权页允许；同一设备保护策略始终生效。\n[EXECUTION_UNKNOWN] 表示命令可能已执行，先核对实际状态，不能切换通道或自动重放。\n",
+    "en": "DSHA 3090 bridge endpoints (BRIDGE_PROTOCOL=%s）\nThe host writes credentials to /root/.dsh/.bridge_headers. Use curl -H @/root/.dsh/.bridge_headers; keep tokens out of URLs and command arguments.\nFor parameters containing Chinese text or spaces, use -G --data-urlencode instead of encoding the URL manually.\n\n== Screen control (accessibility service; no ADB/Shizuku required) ==\nRead screen  curl -s -H @/root/.dsh/.bridge_headers \"127.0.0.1:3090/app/ui/dump\"\n      → Each line: [index] \"text\" clickable center=(x,y) bounds=l,t,r,b\nTap  curl -s -G 127.0.0.1:3090/app/ui/tap --data-urlencode \"text=Settings\" -H @/root/.dsh/.bridge_headers\n      → Prefer tapping by text: positions change with scrolling and animation. Use ?x=&y= only when no text is available.\nInput  curl -s -G 127.0.0.1:3090/app/ui/input --data-urlencode \"text=content\" -H @/root/.dsh/.bridge_headers\n      → Types into the focused field. Tap an input field first if none is focused.\nKey  /app/ui/key?name=back  (back/home/recents/notifications/quicksettings/lock)\nSwipe  /app/ui/swipe?x1=500&y1=1500&x2=500&y2=500&ms=300\nScreenshot  /app/ui/screenshot   → save a PNG in the app's screenshot folder and return its path (not base64)\nAfter each tap or input, dump the screen again before deciding the next step. Do not tap repeatedly from memory.\n\n== Device & apps ==\n/app/device                     Model / Android / battery / network / display / storage / memory\n/app/apps                       Installed apps, separated into user and system apps; filter with q/limit/user=1\n/app/launch?pkg=com.tencent.mm  Launch app\n/app/clip                       Read clipboard (app must be in foreground; Android restriction)\n/app/clip + text=…              Write clipboard\n/app/readfile?path=/…          Read a directory or text at an absolute path, subject to Android permissions; credential directories (.dsh/.ssh/.android) cannot be read\nUse the protected device shell below for device file writes. Ordinary Download files are writable; DCIM/Pictures/Android/data/obb remain read-only.\n\n== User interaction ==\n/app/ask?options=Continue|Cancel + q=…  Ask in a blocking dialog (up to three options)\n/app/notify?title=… + text=…      Notification\n/app/toast + text=…               In-app toast\n/app/vibrate?ms=300               Vibrate (notify the user after a long task)\n/app/share (text= or path=)      Share to another app\n/app/open?url=https://…           Open URL\n/app/export?path=/root/report.md  Export an artifact to Download/DSHA; credential directories cannot be exported\nUse /app/ask when a decision is needed, and notify or vibrate when a long task finishes.\nUse /app/export to deliver reports; do not leave them only in the container.\n\n== Sensors & location (off by default; enable in Configuration) ==\n/app/location (fresh=1 forces a new fix; may take a few seconds)\n/app/sensors lists sensors · /app/sensor?name=light reads a value\n(light: ambient lux / accel / gyro / magnet / pressure / proximity /\n gravity / rotation quaternion / steps since boot)\n/app/torch?on=1 Flashlight\nWhen these APIs return DISABLED (feature off) or NO_PERMISSION (system permission missing),\nTell the user exactly where to enable it. Do not retry; retrying cannot turn the setting on.\n\n== Metadata ==\n/app/version                          Bridge protocol + app version (feature detection)\n/app/help                             This endpoint list\n\n== Plugin status ==\n/app/plugins                          Read last reported loading status\n/app/plugins?loaded=a,b&failed=c      Report status (for plugins)\n\n== Device shell (selects root / Shizuku / ADB automatically) ==\n/root/dsh-bin/adb-shell \"command\"        Use id to verify the actual identity\nIf the wrapper is missing: python3 /root/.dsh/adb-shell.py \"command\"\nSMS queries only allow content query --uri content://sms for the current Android user. Off by default; enable or revoke in Device permissions.\nPreauthorized SMS queries may return message bodies and verification codes. Sending, editing and deleting are blocked; Android may still deny access. Shizuku does not run this sensitive query.\nOnly recognized single commands are allowed, including directory reads and ordinary file operations on explicit paths. Scripts, pipes, redirects and unknown commands are blocked.\nRoot and system directories are read-only. Block devices/partitions, SELinux changes, system setting writes, mounts and firmware flashing are blocked.\nRefresh the complete user/system app list before stopping processes. Ordinary user apps may be stopped; system apps and essential processes are protected.\nUse the full package name with am force-stop / killall / pkill -x. A positive PID with kill is checked against its UID before stopping by package name.\nPolicy blocks return [POLICY_BLOCKED]/126. Root and legacy confirmation switches cannot override them. Do not use another interpreter or the UI to bypass a block.\nIf a connection or pairing error occurs, first check whether the app-level APIs above can perform the task. Only if a shell is essential, ask the user to open\nSettings → Device permissions to connect an available channel. Do not keep retrying the same command.\nDo not use /root/dsh-bin/adb or bare adb; those are guarded wrappers and will fail.\n\n== root（--su）==\nWhen su is enabled and authorized by the root manager, commands run directly without ADB pairing. Otherwise, Shizuku is used before ADB.\nUse --su only when root is explicitly required and enabled in Device permissions. The same device protection policy always applies.\n[EXECUTION_UNKNOWN] means the command may have executed. Verify the actual state before proceeding; do not switch connections or replay automatically.\n",
     "uiFormat": true,
     "files": [
       "app/src/main/java/com/deepseekharness/app/HttpShellService.java"
@@ -26387,15 +26387,6 @@
       "app/src/main/java/com/deepseekharness/app/bridge/AppDeviceActions.java"
     ],
     "id": "build156_11cbc1e59a7d"
-  },
-  {
-    "zh": "操作独立虚拟屏：%s",
-    "en": "Operate independent virtual display: %s",
-    "uiFormat": true,
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/HttpShellService.java"
-    ],
-    "id": "build156_5b615366c237"
   },
   {
     "zh": "点按 (%d,%d)",
@@ -27630,15 +27621,6 @@
       "app/src/main/java/com/deepseekharness/app/ShizukuShell.java"
     ],
     "id": "build156_1e42ba559edb"
-  },
-  {
-    "zh": "[EXECUTION_UNKNOWN] 虚拟屏启动结果未确认，不会自动重试：%s\n[EXIT=125]",
-    "en": "[EXECUTION_UNKNOWN] Virtual screen startup result is unconfirmed; it will not be retried automatically: %s\n[EXIT=125]",
-    "uiFormat": true,
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/ShizukuShell.java"
-    ],
-    "id": "build156_dcfbf247c930"
   },
   {
     "zh": "位置 %s",
@@ -29969,206 +29951,6 @@
     ]
   },
   {
-    "id": "build162_usage_3660",
-    "zh": "使用说明",
-    "en": "How to use",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3661",
-    "zh": "先连接设备通道，再点“创建竖屏”或“创建横屏”。",
-    "en": "Connect a device channel, then tap Create portrait or Create landscape.",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3662",
-    "zh": "调整预览大小",
-    "en": "Adjust preview size",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3663",
-    "zh": "创建竖屏",
-    "en": "Create portrait",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3664",
-    "zh": "创建横屏",
-    "en": "Create landscape",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3665",
-    "zh": "应用",
-    "en": "App",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3666",
-    "zh": "键盘",
-    "en": "Keyboard",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3667",
-    "zh": "控件树",
-    "en": "AI tree",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3668",
-    "zh": "选择应用后会自动填入包名",
-    "en": "Choose an app to fill its package",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3669",
-    "zh": "选择",
-    "en": "Choose",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3670",
-    "zh": "本机键盘输入（中文需无障碍）",
-    "en": "Keyboard input (accessibility for Unicode)",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3671",
-    "zh": "发送",
-    "en": "Send",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3672",
-    "zh": "兼容版暂不支持虚拟屏，请使用标准版",
-    "en": "Virtual screen is not available in the Low build yet; use Standard",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3673",
-    "zh": "虚拟屏需要 Android 11 及以上",
-    "en": "Requires Android 11 or later",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3674",
-    "zh": "虚拟屏开启与使用",
-    "en": "Start and use a virtual screen",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3675",
-    "zh": "1. 使用标准版，手机系统需为 Android 11 或更高。兼容版暂不支持虚拟屏。\n\n2. 打开“设置 → 设备能力授权”，连接 ADB、Shizuku 或 Root 中的一种通道即可。没有 Root 时，可在系统开发者选项开启“无线调试”，再按 DSHA 的 ADB 配对页提示完成配对与连接。仅打开无线调试开关还不够，请确认通道已连接。\n\n3. 回到“设备能力授权”，点“打开虚拟屏”。在本页点“创建竖屏”或“创建横屏”，等待画面出现。打开此页或开启无障碍，都不会自动创建虚拟屏。\n\n4. 点“应用 → 选择”，选中想操作的应用，再点“启动”，把它打开到虚拟屏。预览里可以点击、滑动；双指用于调整预览。\n\n5. 读控件树和中文输入需要开启 DSHA 无障碍。让助手操作时，还要按应用提示确认本次读屏与操作授权，并将操作目标设为虚拟屏。\n\nVSCREEN_NOT_RUNNING 表示虚拟屏还没创建、已经关闭，或连接已断开。先检查设备通道，再点创建按钮；不需要清除数据或重新解压环境。\n\n创建仍失败：到“设置 → 自检与诊断”查看错误记录并导出日志。仅开启无障碍不能解决设备通道或系统兼容问题。\n\n不用时点本页“关闭”回收虚拟屏；连接断开或授权被撤销后，需要重新连接并创建。",
-    "en": "1. Use Standard on Android 11 or later. Low does not support virtual screens yet.\n\n2. Open Settings → Device capability access and connect one channel: ADB, Shizuku, or Root. Without Root, enable Wireless debugging in the system Developer options, then follow DSHA's ADB pairing page to pair and connect. Enabling the system switch alone is not enough; confirm the channel is connected.\n\n3. In Device capability access, tap Open virtual screen. Tap Create portrait or Create landscape here and wait for a picture. Opening this page or enabling accessibility does not create a virtual screen automatically.\n\n4. Tap App → Choose, select an app, then tap Launch to open it on the virtual screen. Tap and swipe in the preview; use two fingers to adjust the preview.\n\n5. Enable DSHA accessibility for the control tree and Unicode input. For assistant control, also confirm this run's screen access when prompted and choose the virtual screen as the action target.\n\nVSCREEN_NOT_RUNNING means no virtual screen has been created, it was closed, or its connection was lost. Check the device channel, then tap a create button. You do not need to clear data or extract the environment again.\n\nIf creation still fails, open Settings → Diagnostics to inspect the error record and export logs. Accessibility alone cannot resolve a missing device channel or system compatibility problem.\n\nTap Close when finished. After a disconnection or revoked access, reconnect and create the virtual screen again.",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3676",
-    "zh": "选择已安装应用",
-    "en": "Choose installed app",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3677",
-    "zh": "控件树（给 AI 使用）",
-    "en": "Accessibility tree for AI",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3678",
-    "zh": "操作完成",
-    "en": "Done",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3679",
-    "zh": "虚拟屏已开启",
-    "en": "Virtual screen ready",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3680",
-    "zh": "虚拟屏尚未开启或已关闭。先连接设备通道，再点“创建竖屏”或“创建横屏”；开启无障碍不会自动创建。",
-    "en": "The virtual screen has not started or was closed. Connect a device channel, then tap Create portrait or Create landscape. Accessibility does not create it automatically.",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3681",
-    "zh": "画面已变化，请看最新画面后再操作",
-    "en": "The view changed. Observe again.",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3682",
-    "zh": "请先在设备能力授权中连接通道",
-    "en": "Connect a device channel first",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3683",
-    "zh": "中文输入需要开启无障碍服务",
-    "en": "Enable accessibility for Unicode input",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3684",
-    "zh": "未完成：",
-    "en": "Not completed: ",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
     "id": "build162_usage_3685",
     "zh": "设备通道状态",
     "en": "Device channel status",
@@ -30196,22 +29978,6 @@
     "id": "build162_usage_3688",
     "zh": "已撤销，后续屏幕操作需要重新确认",
     "en": "Revoked. Future screen actions require confirmation",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/ui/DeviceGrantsFragment.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3689",
-    "zh": "打开虚拟屏",
-    "en": "Open virtual screen",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/ui/DeviceGrantsFragment.java"
-    ]
-  },
-  {
-    "id": "build162_usage_3690",
-    "zh": "虚拟屏需要已连接的设备通道。无障碍不会自动创建，请打开虚拟屏后点“创建竖屏”或“创建横屏”；页内有使用说明。",
-    "en": "A virtual screen requires a connected device channel. Accessibility does not create it automatically. Open virtual screen, then tap Create portrait or Create landscape. Instructions are available on that page.",
     "files": [
       "app/src/main/java/com/deepseekharness/app/ui/DeviceGrantsFragment.java"
     ]
@@ -30447,22 +30213,6 @@
     "uiFormat": true,
     "files": [
       "app/src/main/java/com/deepseekharness/app/ui/BrowserOriginRestoreActivity.java"
-    ]
-  },
-  {
-    "id": "build171_vscreen_0",
-    "zh": "画面已被新帧替换：先 see 再输入；动画界面可改用 tree + node（需要系统提供控件树）。",
-    "en": "A newer frame replaced the observed view. Call see again, or use tree + node on an animated screen when the system provides an accessibility tree.",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
-    ]
-  },
-  {
-    "id": "build171_vscreen_1",
-    "zh": "输入结果未知：动作可能已执行，请先观察实际画面，不要直接重试。",
-    "en": "The input result is unknown: the action may have executed. Observe the actual screen before retrying.",
-    "files": [
-      "app/src/main/java/com/deepseekharness/app/vscreen/VirtualScreenActivity.java"
     ]
   },
   {

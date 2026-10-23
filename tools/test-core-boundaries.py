@@ -103,29 +103,6 @@ class CoreBoundariesTest(unittest.TestCase):
         self.assertIn("forceStopResult(forcedCandidate)", source("core/WebLifecycleController.java"))
         self.assertIn("WebStopText.render(diagnostic)", source("DshaApp.java"))
 
-    def test_virtual_screen_owner_has_one_lazy_factory_and_no_mutable_static_state(self):
-        manager = source("vscreen/VirtualScreenManager.java")
-        application = source("DshaApp.java")
-        compact = re.sub(r"\s+", "", application)
-        self.assertRegex(compact, r"virtualScreenOwner\.get\(\(\)->new"
-                         r"(?:com\.deepseekharness\.app\.vscreen\.)?VirtualScreenManager\(this\)\)")
-        self.assertRegex(manager, r"public\s+VirtualScreenManager\s*\(\s*Context\s+\w+\s*\)")
-        locator = re.search(r"public\s+static\s+VirtualScreenManager\s+from\s*"
-                            r"\(\s*Context\s+\w+\s*\)\s*\{([^{}]*)\}", manager)
-        self.assertIsNotNone(locator, "The locator must delegate to the context's Application owner")
-        self.assertRegex(locator.group(1), r"return\s+(?:com\.deepseekharness\.app\.)?DshaApp\.from\(\w+\)"
-                         r"\.virtualScreenManager\(\)\s*;")
-        self.assertIn('throw new IllegalStateException("DSHA_APPLICATION_SCOPE_UNAVAILABLE")', application)
-        for name in ("VirtualScreenManager", "VirtualScreenPreviews", "VirtualScreenForeground",
-                     "VirtualScreenOverlayController", "VirtualScreenAccessibility", "VirtualScreenInput"):
-            text = source("vscreen/" + name + ".java")
-            self.assertEqual([], mutable_static_fields(text), name)
-            self.assertNotIn("DshaApp.current()", text, name)
-        for path in MAIN.rglob("*.java"):
-            constructors = re.findall(r"\bnew\s+(?:[\w$.]+\.)?VirtualScreenManager\s*\(",
-                                      without_comments(path.read_text(encoding="utf-8")))
-            self.assertEqual(1 if path.name == "DshaApp.java" else 0, len(constructors), str(path))
-
     def test_portable_settings_listener_and_writer_belong_to_one_application(self):
         settings = source("data/PortableSettings.java")
         application = source("DshaApp.java")

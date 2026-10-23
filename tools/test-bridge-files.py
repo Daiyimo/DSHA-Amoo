@@ -12,7 +12,6 @@ TESTS = [
     'util.DeviceFileOperationsTest', 'util.LanTokenStateTest', 'LanAuthTest',
     'util.DeviceShellPolicyTest', 'util.DeviceAppPolicyTest', 'util.SelfPackageIdentityTest',
     'util.BridgeCredentialAuthTest', 'util.ScreenTargetTest', 'util.ScreenSessionGrantTest',
-    'util.VscreenBridgeRequestTest', 'util.VirtualScreenRequestFenceTest',
     'util.TouchGestureDispatchTest', 'util.BridgeTemplateFormattingTest',
 ]
 

@@ -10,6 +10,10 @@
 
 ## 本轮用户决定（覆盖下方与历史文档中的旧实现规则）
 
+- **虚拟屏整体移除，执行状态改走任务胶囊（2026-10-23，覆盖上文所有虚拟屏条目）**：真机取证（`E:\tmp\dsha-reboot-debug\` 的 logcat 全缓冲与 dropbox）证明 StepOS 上「把 Activity 启动/搬迁到虚拟屏」必崩 system_server——Transition 的 BLAST 同步组超时后 `calculateTransitionRoots` 对 null WindowContainer 调 `makeAnimationLeash()`（Transition.java:3328），当天 5 次崩溃堆栈逐字一致，用户观感即系统重启（内核 uptime 不变，实为 framework 重启）。scrcpy 的纯镜像虚拟屏不崩，雷区精确在「往屏上放 Activity」，属 ROM 框架 bug、DSHA 侧不可修。因此 vscreen 子系统整体退场：`vscreen/` 包、util 纯 vscreen 类、`/app/vscreen/*` 桥路由、`dsh-tool-vscreen` 插件、shell 通道 VIRTUAL_SCREEN 策略、相关测试与 tools 夹具全删；`VirtualScreenWindowPolicy` 保留（主屏 dump 共用）。历史 release/audit 文档留档不改。
+- **agent 任务执行期间 DSHA 不进画中画**：`PictureInPicturePolicy.canEnter` 增加 `taskActive` 判定（`AgentTaskNotifications.hasActiveTask()`），任务活跃时被全屏应用盖住就正常退后台；无任务时画中画行为与从前逐字节一致。
+- **执行状态用自绘任务胶囊（灵动岛）**：`AgentTaskIsland`（TYPE_APPLICATION_OVERLAY 顶部小药丸：阶段+计时，点一下回对话、长按请求停止）+ `util/AgentTaskIslandState`（纯逻辑，配单测），配置页「显示任务状态胶囊」默认开。**系统 promoted 胶囊对第三方不可达**：白名单 `Settings.System` 的 `stepos_app_support_livenotification_pkgs` 只有 5 个系统包，实测白名单内 shell 包发持续通知资格管线仍 `eligible=0`，与旧决定「任务通知采用标准进度通知，不请求系统 promoted 胶囊」一致。没授悬浮窗权限时发一次性引导通知，照旧降级为通知栏。
+
 - 本轮新增修复只看仍开放的 issue / PR，已关闭条目不追做，插件收录跳过。QuickChat 已按用户要求撤回，不再恢复其生产入口。标准版优先，Low 不安装、不做设备验收，既有 Low172 交付文件和校验保持原字节；不能把软件双版通过写成设备双版通过。
 - 引擎只保留 bxroot / proot。首次升级优先 bxroot；升级后的显式 proot 选择保留。启动阶段明确引擎失败、无插件故障和用户业务提交，且本轮受管后代树与 launcher 都已确认退出，才允许一次自动 proot 重试。慢启动、超时、未知执行结果和已开始的写任务不能借此重放。proroot 只保留历史记录读取，不保留生产执行。
 - 彻底重装/完整格式化功能移除，包括生产入口、Intent 触发和擦除后端。外置工作区维护只能断开私有引用，不遍历清理、覆盖或改名其内容；旧恢复日志不能自动重放外置写删。冷测速等合法私有临时清理必须使用受控目标及 NOFOLLOW，不能继承完整格式化能力。

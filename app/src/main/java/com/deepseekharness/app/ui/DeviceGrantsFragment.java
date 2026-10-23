@@ -98,34 +98,11 @@ public final class DeviceGrantsFragment extends Fragment {
                       "Revoked. Future screen actions require individual confirmation")
                   : com.deepseekharness.app.util.UiText.text("授权保存失败，请重试"));
         });
-    android.widget.Button virtualScreen = new androidx.appcompat.widget.AppCompatButton(ctx);
-    virtualScreen.setText(
-        com.deepseekharness.app.util.UiText.choose("打开虚拟屏", "Open virtual screen"));
-    virtualScreen.setAllCaps(false);
-    virtualScreen.setTextSize(12);
-    virtualScreen.setBackgroundResource(R.drawable.bg_btn);
-    virtualScreen.setOnClickListener(
-        button ->
-            startActivity(
-                new Intent(ctx, com.deepseekharness.app.vscreen.VirtualScreenActivity.class)));
-    if (com.deepseekharness.app.vscreen.VirtualScreenManager.supported(ctx)) {
-      android.widget.TextView virtualHint = new android.widget.TextView(ctx);
-      virtualHint.setText(
-          com.deepseekharness.app.util.UiText.choose(
-              "虚拟屏需要已连接的设备通道。无障碍不会自动创建，请打开虚拟屏后点“创建竖屏”或“创建横屏”；页内有使用说明。",
-              "A virtual screen requires a connected device channel. Accessibility does not create it automatically. Open virtual screen, then tap Create portrait or Create landscape. Instructions are available on that page."));
-      virtualHint.setTextSize(12);
-      virtualHint.setTextColor(ctx.getColor(R.color.text_secondary));
-      screenCard.addView(virtualHint, new android.widget.LinearLayout.LayoutParams(-1, -2));
-      screenCard.addView(virtualScreen, new android.widget.LinearLayout.LayoutParams(-1, -2));
-    }
-
     CompoundButton root = view.findViewById(R.id.config_root_shell);
     root.setChecked(RootShell.enabled(ctx));
     root.setOnCheckedChangeListener(
         (button, enabled) -> {
           new ConfigStore(ctx).setRootShellAllowed(enabled);
-          if (!enabled) com.deepseekharness.app.vscreen.VirtualScreenManager.from(ctx).revoke();
           syncSettings();
           refreshChannelLabels();
         });
@@ -202,7 +179,6 @@ public final class DeviceGrantsFragment extends Fragment {
     adb.setOnCheckedChangeListener(
         (button, enabled) -> {
           savePreference("adb_enabled", enabled);
-          if (!enabled) com.deepseekharness.app.vscreen.VirtualScreenManager.from(ctx).revoke();
           if (enabled) {
             DeviceBridgeService.apply(ctx);
             if (getActivity() instanceof MainActivity)
@@ -211,18 +187,6 @@ public final class DeviceGrantsFragment extends Fragment {
           syncSettings();
           refreshAdbStatus(view.findViewById(R.id.config_adb_status));
         });
-    CompoundButton vdisplay = view.findViewById(R.id.config_execution_vdisplay);
-    if (vdisplay != null) {
-      var store = new com.deepseekharness.app.core.ConfigStore(ctx);
-      vdisplay.setChecked(store.isExecutionOnVirtualDisplay());
-      vdisplay.setOnCheckedChangeListener(
-          (button, enabled) -> {
-            store.setExecutionOnVirtualDisplay(enabled);
-            // 关掉时收回已建的虚拟屏，避免留在后台占资源。
-            if (!enabled) com.deepseekharness.app.vscreen.VirtualScreenManager.from(ctx).revoke();
-            syncSettings();
-          });
-    }
     view.findViewById(R.id.config_adb_pair)
         .setOnClickListener(
             button -> {

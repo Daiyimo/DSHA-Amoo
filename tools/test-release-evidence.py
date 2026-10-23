@@ -164,7 +164,7 @@ class ReleaseEvidenceTest(unittest.TestCase):
             source.write_text(json.dumps(current),encoding='utf8');log.write_text('passed\n',encoding='utf8')
             names=['gradle-verification','runtime-input-contract','release-acceptance-contract','release-evidence-contract','apk-assets',
                    'standard-elf','low-elf','standard-signature','low-signature','plugin-upgrade-gate',
-                   'recovery-apk','recovery-browser-overlay','recovery-profile-boot','mobile-modal','adb-flow','adb-vscreen-bridge','web-ui-host-fixtures','plugin-downloads',
+                   'recovery-apk','recovery-browser-overlay','recovery-profile-boot','mobile-modal','adb-flow','web-ui-host-fixtures','plugin-downloads',
                    'third-party-notices','third-party-apk','bxroot-native-source','native-runtime-apk']
             receipt={'verificationSchema':2,'status':'PASS_WITH_EXPLICIT_DEVICE_GAPS',
                      'sourceSnapshot':{'path':str(source),'sha256':gate.digest(source)},
@@ -190,7 +190,7 @@ class ReleaseEvidenceTest(unittest.TestCase):
             names=['gradle-verification','runtime-input-contract','release-acceptance-contract','release-evidence-contract','apk-assets',
                    'standard-elf','low-elf','standard-signature','low-signature','plugin-upgrade-gate',
                    'recovery-apk','recovery-browser-overlay','recovery-profile-boot','mobile-modal',
-                   'adb-flow','adb-vscreen-bridge','web-ui-host-fixtures','plugin-downloads',
+                   'adb-flow','web-ui-host-fixtures','plugin-downloads',
                    'third-party-notices','third-party-apk','bxroot-native-source','native-runtime-apk']
             apks=[]
             version_code,version_name=gate.diagnostic_version()

@@ -38,18 +38,6 @@
       "cli": "no positional arguments; see explicit environment/requirements"
     },
     {
-      "path": "tools/test-adb-vscreen-bridge.py",
-      "stage": "runtime",
-      "reason": "Current source/verified runtime host fixture; explicit dependencies and sandbox HOME; no Android device operations",
-      "args": [],
-      "timeoutSeconds": 900,
-      "requires": [
-        "python39"
-      ],
-      "environment": {},
-      "cli": "no positional arguments; see explicit environment/requirements"
-    },
-    {
       "path": "tools/test-aidl-shim.ps1",
       "stage": "windows",
       "reason": "Windows fake SDK/shim source fixture; absolute Git Bash dependency, no real device or APK",
@@ -1940,52 +1928,6 @@
       "timeoutSeconds": 300,
       "requires": [
         "python39"
-      ],
-      "environment": {},
-      "cli": "no positional arguments; see explicit environment/requirements"
-    },
-    {
-      "path": "tools/test-vscreen-bundle.mjs",
-      "stage": "runtime",
-      "reason": "Current isolated software regression; no device actions",
-      "args": [],
-      "timeoutSeconds": 900,
-      "requires": [
-        "node24",
-        "python39",
-        "raw"
-      ],
-      "environment": {},
-      "cli": "Explicit current software fixture inputs"
-    },
-    {
-      "path": "tools/test-vscreen-manager-http.py",
-      "stage": "runtime",
-      "reason": "Fresh main/standard release source compilation with current StandardRelease resources and BuildConfig, locked host dependencies, owned-state JUnit and real bounded loopback HTTP; no device, Gradle or APK generation",
-      "requires": [
-        "python39",
-        "jdk17",
-        "toolchains"
-      ],
-      "environment": {},
-      "timeoutSeconds": 300,
-      "args": [
-        "--jdk",
-        "{jdk}",
-        "--sdk",
-        "{sdk}",
-        "--gradle-home",
-        "{gradleHome}"
-      ]
-    },
-    {
-      "path": "tools/test-vscreen.mjs",
-      "stage": "runtime",
-      "reason": "Current source/verified runtime host fixture; explicit dependencies and sandbox HOME; no Android device operations",
-      "args": [],
-      "timeoutSeconds": 900,
-      "requires": [
-        "node24"
       ],
       "environment": {},
       "cli": "no positional arguments; see explicit environment/requirements"

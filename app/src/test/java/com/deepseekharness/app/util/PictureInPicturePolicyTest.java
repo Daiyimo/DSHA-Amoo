@@ -30,14 +30,22 @@ public class PictureInPicturePolicyTest {
 
   @Test
   public void onlySystemAllowedReadyContentMayEnter() {
-    assertTrue(PictureInPicturePolicy.canEnter(true, true, true, false, false));
-    for (int denied = 0; denied < 5; denied++) {
-      boolean[] conditions = {true, true, true, false, false};
+    assertTrue(PictureInPicturePolicy.canEnter(true, true, true, false, false, false));
+    for (int denied = 0; denied < 6; denied++) {
+      boolean[] conditions = {true, true, true, false, false, false};
       conditions[denied] = !conditions[denied];
       assertFalse(
           PictureInPicturePolicy.canEnter(
-              conditions[0], conditions[1], conditions[2], conditions[3], conditions[4]));
+              conditions[0], conditions[1], conditions[2], conditions[3], conditions[4],
+              conditions[5]));
     }
+  }
+
+  @Test
+  public void activeAgentTaskSuppressesPictureInPicture() {
+    // 任务执行期间被全屏应用盖住也不进画中画：主屏留给目标应用，状态看任务胶囊。
+    assertFalse(PictureInPicturePolicy.canEnter(true, true, true, false, false, true));
+    assertTrue(PictureInPicturePolicy.canEnter(true, true, true, false, false, false));
   }
 
   @Test

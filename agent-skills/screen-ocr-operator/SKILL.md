@@ -23,3 +23,7 @@ description: 默认用截图 + 视觉模型（step-5-preview）识别界面并�
 不以裸adb或其它通道重放未知结果。敏感应用和确认窗口采用原生执行点限制，不替用户确认维护写入。
 
 不把截图、密钥、配对码或对话写公开取证目录。临时图只清理本次工具明确创建的文件，不批量删除用户Pictures/Downloads/历史原件。核对结果后报告实际完成情况。
+
+## 精确定位：android_detect_ui（WebView/游戏首选）
+
+当 android_get_state 无可读节点（WebView、小游戏、Canvas 页面），或对截图目测坐标没把握时，调用 mcp__dsha-android__android_detect_ui：它返回同帧截图 + 带序号的可点元素清单（类别 + 中心坐标）。选中目标元素对应的序号，用 mcp__dsha-android__android_click(index=N) 点击其框中心，不要自己输出肉眼估计的像素坐标——视觉模型目测竖坐标常偏差数百像素（实测在 WebView 游戏菜单上偏约 420px），检测框是像素级精确的。选完即点，避免中途切屏导致序号对应的画面已变。控件树有可读节点时，仍优先按文字/控件点击。

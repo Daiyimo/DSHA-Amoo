@@ -1606,6 +1606,56 @@
       "asset": "destructive-policy/workdir.js",
       "target": "usr/local/lib/node_modules/@deepseek-ai/dsh/node_modules/dsha-destructive-policy/workdir.js",
       "executable": false
+    },
+    {
+      "asset": "ui-detect/ui_detect.py",
+      "target": "root/.dsha/ui-detect/ui_detect.py",
+      "executable": false
+    },
+    {
+      "asset": "ui-detect/yolov8n-ui.onnx",
+      "target": "root/.dsha/ui-detect/yolov8n-ui.onnx",
+      "executable": false
+    },
+    {
+      "asset": "ui-detect/wheels/flatbuffers-25.12.19-py2.py3-none-any.whl",
+      "target": "root/.dsha/ui-detect/wheels/flatbuffers-25.12.19-py2.py3-none-any.whl",
+      "executable": false
+    },
+    {
+      "asset": "ui-detect/wheels/mpmath-1.3.0-py3-none-any.whl",
+      "target": "root/.dsha/ui-detect/wheels/mpmath-1.3.0-py3-none-any.whl",
+      "executable": false
+    },
+    {
+      "asset": "ui-detect/wheels/numpy-2.3.2-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+      "target": "root/.dsha/ui-detect/wheels/numpy-2.3.2-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+      "executable": false
+    },
+    {
+      "asset": "ui-detect/wheels/onnxruntime-1.24.1-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+      "target": "root/.dsha/ui-detect/wheels/onnxruntime-1.24.1-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+      "executable": false
+    },
+    {
+      "asset": "ui-detect/wheels/packaging-26.3-py3-none-any.whl",
+      "target": "root/.dsha/ui-detect/wheels/packaging-26.3-py3-none-any.whl",
+      "executable": false
+    },
+    {
+      "asset": "ui-detect/wheels/pillow-11.3.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.whl",
+      "target": "root/.dsha/ui-detect/wheels/pillow-11.3.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.whl",
+      "executable": false
+    },
+    {
+      "asset": "ui-detect/wheels/protobuf-7.36.2-cp310-abi3-manylinux2014_aarch64.whl",
+      "target": "root/.dsha/ui-detect/wheels/protobuf-7.36.2-cp310-abi3-manylinux2014_aarch64.whl",
+      "executable": false
+    },
+    {
+      "asset": "ui-detect/wheels/sympy-1.14.0-py3-none-any.whl",
+      "target": "root/.dsha/ui-detect/wheels/sympy-1.14.0-py3-none-any.whl",
+      "executable": false
     }
   ],
   "assetFiles": [

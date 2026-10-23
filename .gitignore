@@ -48,3 +48,8 @@ website-evidence/
 
 # 本机验证产物（日志、探针输出；不进仓库）
 *.log
+
+# ui-detect 生成的大资产（由 tools/prepare-ui-detect.py 与 tools/export-ui-onnx.py 再生）
+app/src/main/assets/ui-detect/wheels/
+app/src/main/assets/ui-detect/yolov8n-ui.onnx
+app/build/ui-detect-cache/

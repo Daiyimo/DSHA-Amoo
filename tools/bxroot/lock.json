@@ -16,27 +16,11 @@
     "strictExec": true
   },
   "build": {
-    "environment": "DSHA-build172 pinned Ubuntu/GCC13 WSL2 toolchain reused for build173",
-    "target": "aarch64-linux-gnu",
-    "compiler": "aarch64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
-    "packages": {
-      "binutils-aarch64-linux-gnu": "2.42-4ubuntu2.10",
-      "gcc-13-aarch64-linux-gnu": "13.3.0-6ubuntu2~24.04.1cross1",
-      "gcc-13-aarch64-linux-gnu-base:amd64": "13.3.0-6ubuntu2~24.04.1cross1",
-      "libc6-arm64-cross": "2.39-0ubuntu8cross1",
-      "libc6-dev-arm64-cross": "2.39-0ubuntu8cross1",
-      "libgcc-13-dev-arm64-cross": "13.3.0-6ubuntu2~24.04.1cross1",
-      "qemu-user-static": "1:8.2.2+ds-0ubuntu1.18"
-    },
-    "runtimeOptimization": "O1",
-    "launcherUlxOptimization": "O2",
-    "ldFlags": "-Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=4096 -Wl,-z,relro -Wl,-z,now -Wl,--build-id=sha1",
-    "sourceProofSha256": "64b54c69216a39fa00f3854a1110eb75d98e584d813eb6213d361d58d9405e2b",
-    "relinkMaterial": "artifacts/pr173/bxroot/bind-map-native/relink",
-    "glibcSource": "https://archive.ubuntu.com/ubuntu/pool/main/g/glibc/glibc_2.39-0ubuntu8.dsc",
-    "patchedSource": "artifacts/pr173/bxroot/bind-map-source",
-    "ulxLinkMode": "static-pie",
-    "ulxEarlyEntry": "bx_early_start"
+    "profile": "default",
+    "host": "WSL2 Ubuntu",
+    "compiler": "aarch64-linux-gnu-gcc-13 (gcc-13-aarch64-linux-gnu)",
+    "sysroot": "libc6-dev-arm64-cross",
+    "note": "Local WSL cross-build of pinned bxroot; recorded by tools/bxroot/build.py --record"
   },
   "patches": [
     {

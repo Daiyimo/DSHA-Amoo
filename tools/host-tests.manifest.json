@@ -2046,6 +2046,54 @@
         "--verify-archive"
       ],
       "cli": "--verify-archive; current source/marker/lock bytes and production builder through DSHA_PYTHON; no APK/archive generation or fixture-pointer mutation"
+    },
+    {
+      "path": "tools/test-ui-detect-onnx.py",
+      "stage": "fast",
+      "reason": "ui-detect ONNX 契约(images[1,3,640,640]->output0[1,300,6])；需 onnxruntime",
+      "args": [],
+      "timeoutSeconds": 300,
+      "requires": [
+        "python39"
+      ],
+      "environment": {},
+      "cli": "no args"
+    },
+    {
+      "path": "tools/test-ui-detect.py",
+      "stage": "runtime",
+      "reason": "ui_detect letterbox 反算单测(+DSHA_TEST_SHOT 时五子棋 acceptance)；需 numpy+pillow",
+      "args": [],
+      "timeoutSeconds": 300,
+      "requires": [
+        "python39"
+      ],
+      "environment": {},
+      "cli": "no args; DSHA_TEST_SHOT 可选触发 acceptance"
+    },
+    {
+      "path": "tools/test-ui-detect-asset.py",
+      "stage": "fast",
+      "reason": "ui-detect 资产布局 + installs 覆盖守卫(防 C1 漂移)",
+      "args": [],
+      "timeoutSeconds": 120,
+      "requires": [
+        "python39"
+      ],
+      "environment": {},
+      "cli": "no args"
+    },
+    {
+      "path": "tools/test-ui-detect-mcp.mjs",
+      "stage": "runtime",
+      "reason": "MCP 纯逻辑：序号/归一化坐标/动作后验/边界校验",
+      "args": [],
+      "timeoutSeconds": 300,
+      "requires": [
+        "node24"
+      ],
+      "environment": {},
+      "cli": "no args"
     }
   ],
   "historicalExcluded": [

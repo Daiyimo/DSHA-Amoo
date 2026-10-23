@@ -47,4 +47,28 @@ assert.deepStrictEqual(
   [{ index: 1, cls: 'TextButton', cx: 10, cy: 20 }],
 );
 
-console.log('OK resolveClickIndex + parseDetectorOutput + tools schema');
+// ---- 归一化坐标 0-1000 -> 像素（含 clamp 到屏内）----
+assert.deepStrictEqual(server.normToPixels([500, 500], 1200, 2670), { x: 600, y: 1335 });
+assert.deepStrictEqual(server.normToPixels([0, 1000], 1200, 2670), { x: 0, y: 2669 });
+assert.throws(() => server.normToPixels([1001, 500], 1200, 2670), /INVALID_rel/);
+assert.throws(() => server.normToPixels([500], 1200, 2670), /INVALID_rel/);
+assert.throws(() => server.normToPixels([500, 500], 0, 0), /SCREEN_SIZE_UNKNOWN/); // 未截图不知尺寸
+
+// ---- 动作后验判定（screenshot_exactly_same 反馈）----
+assert.strictEqual(server.outcomeNote(null, 'h1', 'h1'), '', '无待结算动作不告警');
+assert.strictEqual(server.outcomeNote({ label: 'click' }, null, 'h1'), '', '无上一帧不告警');
+assert.strictEqual(server.outcomeNote({ label: 'click(index=3)' }, 'h1', 'h2'), '', '屏幕有变不告警');
+assert.match(server.outcomeNote({ label: 'click(index=3)' }, 'h1', 'h1'), /后验.*screenshot_exactly_same/);
+
+// ---- 硬边界（越界拒绝；未知尺寸不拦）----
+assert.doesNotThrow(() => server.assertInScreen(100, 100, 1200, 2670));
+assert.doesNotThrow(() => server.assertInScreen(1199, 2669, 1200, 2670));
+assert.throws(() => server.assertInScreen(1200, 100, 1200, 2670), /OUT_OF_SCREEN/);
+assert.throws(() => server.assertInScreen(100, 2670, 1200, 2670), /OUT_OF_SCREEN/);
+assert.throws(() => server.assertInScreen(-1, 100, 1200, 2670), /OUT_OF_SCREEN/);
+assert.doesNotThrow(() => server.assertInScreen(9999, 9999, 0, 0));
+
+// android_click schema 暴露 rel（0-1000 归一化坐标入口）
+assert.ok(click.inputSchema.properties.rel, 'android_click 应有 rel 归一化参数');
+
+console.log('OK resolveClickIndex + parseDetectorOutput + normToPixels + outcomeNote + assertInScreen + tools schema');

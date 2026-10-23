@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "runtimeId": "67da35a0d75d4c379b661514ab6ca9582860679958c5fa71fd17f692ca888452",
+  "runtimeId": "5637c5517184b7de291a56d22af1f2c177c9008c6f85e6a2d199a2900aa0f5d4",
   "baseVersion": "10",
   "dshVersion": "0.2.0-rc.2",
   "launcherContract": "DSHA_ARM64_V2",
@@ -402,7 +402,7 @@
     "builtin-plugins/dsh-auto-review/package.json": "550eec82cfa16a7ea48d0cb57d2c5ce8a3e1dc9123277415f149d8d3d97ee573",
     "builtin-plugins/dsh-computer-use-android/cordis.patch.yml": "b0c36d7d6f7a162addbbfc4d31fcca3c8256140925f6aa99316e62506ee05dff",
     "builtin-plugins/dsh-computer-use-android/lib/index.js": "a6886c4585d30f44ca4b2b8209225b11f938e5ad1b7467b505fae12865f3a0f4",
-    "builtin-plugins/dsh-computer-use-android/lib/server.cjs": "0a1a433d2ffa4201a4280c0f14e90e28ba0da6d56e20af13a718db1d8a59b1ec",
+    "builtin-plugins/dsh-computer-use-android/lib/server.cjs": "b06355866764c61e85a25a95b9677687dac8449ef88b9fa930fa3c6605241003",
     "builtin-plugins/dsh-computer-use-android/package.json": "886f2bf575e17c9dee7802c221db3a113f8045e7976b8b28ca4964832ed1225d",
     "builtin-plugins/dsh-destructive-guard/cordis.patch.yml": "b2c5a115b06cb37b20febe74f1e8837d5c88795ce52a0813cc7749f91a42e3d7",
     "builtin-plugins/dsh-destructive-guard/lib/destructive.js": "a57dc469a7e7da32bd0b55ddd18cd68bb65f709b5389f2475093eafb098c8726",

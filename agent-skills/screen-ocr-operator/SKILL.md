@@ -1,13 +1,17 @@
 ---
 name: screen-ocr-operator
-description: 默认用截图 + 视觉模型（step-5-preview）识别界面并按坐标操作，控件树兜底；核对目标和坐标后执行用户要求的手机操作。
+description: 定位优先级：控件树(android_get_state) → 自绘/WebView 用 android_detect_ui 按序号点击 → 最后才肉眼估坐标；核对目标和坐标后执行用户要求的手机操作。
 ---
 
 # 读屏与截图操作
 
 使用实际应用所提供的 Android 工具与能力状态。通道可以是 Root、Shizuku 或 ADB，不假设身份为 uid=2000，不把guest root当Android Root。
 
-先核对屏幕、方向、目标应用和授权。默认用 mcp__dsha-android__android_screenshot 截图（原生 PNG 直接进模型上下文），交给视觉模型（step-5-preview）识别要操作的元素，再按图中坐标用 mcp__dsha-android__android_click 点按；控件树 mcp__dsha-android__android_get_state 只作兜底——截图识别失败、需要精确文字匹配、或元素没有视觉特征时才用，拿到它的中心坐标后仍按坐标点按。能否截图取决于实际系统、服务和本次授权，不能从Standard/Low名称推导全设备支持。
+先核对屏幕、方向、目标应用和授权。定位按以下优先级，**不要跳级**：
+1. 先用 mcp__dsha-android__android_get_state 读控件树——有可读节点时，按文字/中心坐标用 mcp__dsha-android__android_click 点（最稳）。
+2. 控件树返回「没有可读节点」时（微信等自绘 UI、WebView、小游戏——这些恒为空），**不要凭截图肉眼估坐标**，直接用 mcp__dsha-android__android_detect_ui 拿带序号的可点元素，再 mcp__dsha-android__android_click(index=N) 点框中心。
+3. 只有 detect 也没有可点元素、或目标本是纯背景/非控件区域时，才退回复核截图后 mcp__dsha-android__android_click(x,y)。
+视觉模型凭截图目测坐标不可靠——实测竖坐标常偏 100–420px（五子棋游戏菜单偏约 420px、微信底部 tab 偏约 130px），检测框才是像素级精确的。能否截图取决于实际系统、服务和本次授权，不能从 Standard/Low 名称推导全设备支持。
 
 根据截图识别出的坐标点击、滑动、输入；用控件树兜底时取每项的中心坐标。截图坐标、虚拟屏坐标和主屏必须对应；PiP、键盘、悬浮窗可能遮挡，不能只按旧 XML 坐标。每次操作后重新截图核对，目标不可核验或已改变时停止，不伪报完成。
 
@@ -24,6 +28,6 @@ description: 默认用截图 + 视觉模型（step-5-preview）识别界面并�
 
 不把截图、密钥、配对码或对话写公开取证目录。临时图只清理本次工具明确创建的文件，不批量删除用户Pictures/Downloads/历史原件。核对结果后报告实际完成情况。
 
-## 精确定位：android_detect_ui（WebView/游戏首选）
+## 精确定位：android_detect_ui（自绘/WebView 界面的首选定位）
 
-当 android_get_state 无可读节点（WebView、小游戏、Canvas 页面），或对截图目测坐标没把握时，调用 mcp__dsha-android__android_detect_ui：它返回同帧截图 + 带序号的可点元素清单（类别 + 中心坐标）。选中目标元素对应的序号，用 mcp__dsha-android__android_click(index=N) 点击其框中心，不要自己输出肉眼估计的像素坐标——视觉模型目测竖坐标常偏差数百像素（实测在 WebView 游戏菜单上偏约 420px），检测框是像素级精确的。选完即点，避免中途切屏导致序号对应的画面已变。控件树有可读节点时，仍优先按文字/控件点击。
+对控件树恒为空的自绘 UI（如微信）、WebView、小游戏，这是首选定位手段（见上文优先级 2）：调 mcp__dsha-android__android_detect_ui 返回同帧截图 + 带序号可点元素（类别 + 中心坐标），按目标选序号用 mcp__dsha-android__android_click(index=N) 点其框中心。选完即点，避免中途切屏致序号失效（画面变更后旧序号会报 DETECT_STALE，需重新 detect）。局限：它检测的是 UI 元素（按钮/输入框/图标），**不识别游戏棋盘格线等 canvas 内部交叉点**——那类目标仍需别的手段。

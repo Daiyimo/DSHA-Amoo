@@ -38,14 +38,12 @@ python tools/export-ui-onnx.py <best.pt> assets/ui-detect/yolov8n-ui.onnx   # �
 装好后进设备容器：
 ```sh
 ls /root/.dsha/ui-detect/            # 应有 ui_detect.py, yolov8n-ui.onnx, wheels/（8 个）
-# 手动预演 server 的首次自举（之后 server 会自建 site/.ready）：
-python3 -m pip install --no-index --find-links /root/.dsha/ui-detect/wheels \
-  --target /root/.dsha/ui-detect/site onnxruntime==1.24.1 numpy==2.3.2 pillow==11.3.0
+# 手动预演 server 的首次自举（免 pip：直接解压 wheel 到 site；容器 python 实为 3.12、无 pip）：
 PYTHONPATH=/root/.dsha/ui-detect/site python3 /root/.dsha/ui-detect/ui_detect.py \
   <五子棋菜单.png> /root/.dsha/ui-detect/yolov8n-ui.onnx
 ```
 
-**观察点 B（最可能失败处）**：`import onnxruntime` 在容器 ARM Python 3.14 上是否成功（本机无法加载 aarch64 `.so`）。若 `pip install` 或 import 报错，按缺失模块补 wheel 进 `tools/prepare-ui-detect.py` 的 `WHEEL_LOCK`。**预期输出**：JSON 里有一条 `{"index":3,"cls":"TextButton",...,"cx":596,"cy":1712}`（人机战神）。server 端由 `android_detect_ui` 自动完成上述自举+调用，无需手动。
+**观察点 B（已验收 ✓，session 9dbdde1f）**：`android_detect_ui` 在真机成功返回 8 个可点元素（人机战神 #3 @ (595,1712)），`click(index=3)` 命中并进入对局——cp312 wheel + 免 pip 解压（按 python 版本过滤）确认生效。容器 python 是 **3.12(glibc)**、无 pip（早前误判 3.14 已修正）。
 
 ## 4. 真机复跑原任务
 
@@ -53,6 +51,8 @@ PYTHONPATH=/root/.dsha/ui-detect/site python3 /root/.dsha/ui-detect/ui_detect.py
 
 ## 5. 已知保留 / 待办
 
+- **【大工程·记录待做】canvas 棋盘落子**：五子棋进入对局后，在 canvas 棋盘上落子失败——`dispatchGesture` 注入点击到不了/不触发 canvas 落子（实测点击中心 (600,1545) 距真实交叉点 (600,1538) 仅 7px 仍一子未落；DOM 菜单按钮却能点）。可行方向：给 `android_click` 加一条 shell `input tap x y`（InputManager 原生注入）分支，对 canvas/游戏往往比无障碍手势有效；需设备 shell 通道 + 重编验证。**本次不做。**
+- **detect-first 指引（已写入，待重编生效）**：session eb754014 里 agent 肉眼估「发现」tab 坐标 y=2500/2450，实测 tab 栏在 y=2529..2643，两击落空。已在 `screen-ocr-operator/SKILL.md` + server.cjs `instructions` 明确优先级：控件树空的自绘/WebView UI **直接用 detect_ui 按序号点，不先肉眼估坐标**（目测常偏 100–420px）。需重编+重装才在设备生效。
 - **gradle 接入**：`prepare-ui-detect.py`/`export-ui-onnx.py` 尚未进 preBuild 链；干净检出需先手动跑（§2）。
 - **验收夹具**：`tools/test-ui-detect.py` 的五子棋 acceptance 需 `DSHA_TEST_SHOT` 指向截图，否则 SKIP；仓库无截图夹具，建议提交一张脱敏图到 `tools/fixtures/` 让该判据常驻守护。
 - **Minor（reviewer）**：BILINEAR 对齐、每次新建 InferenceSession（加模块级缓存）、临时文件名用 `randomUUID`+`wx`、8 个第三方包许可声明（THIRD_PARTY_NOTICES/licenses）、sympy/mpmath 若非必需可瘦身、`.data/scripts|headers` 重映射与 SITE 清理。

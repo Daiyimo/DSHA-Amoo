@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "runtimeId": "2d2b20af55764128d7c26c1de7c1f0fce2f297f54616431adcd0f8e95b2e35ad",
+  "runtimeId": "d49e6f658f29110a9d0a23747374d031955f069cf02d3e53706823221c7f8b73",
   "baseVersion": "10",
   "dshVersion": "0.2.0-rc.2",
   "launcherContract": "DSHA_ARM64_V2",
@@ -407,7 +407,7 @@
     "builtin-plugins/dsh-destructive-guard/lib/workdir.js": "a401d96b87f2b1cc566ebb1b55b8a827f67f08c2418d1e739e870fa775b55861",
     "builtin-plugins/dsh-destructive-guard/package.json": "bcc75335cc0f590d076a93ef505b3c6c45aca7eb35f66ce277f5fdb450767004",
     "builtin-plugins/dsh-device-shell-guide/cordis.patch.yml": "7210a96bb4e908adcd4b7736c32b8fd30fe65bce6f6deadc7a7b3032ed967c70",
-    "builtin-plugins/dsh-device-shell-guide/lib/index.js": "aa1bf7a7394cb54b98a7bd450ac2cb68a32cf2c7c4db6b39d814bd79c37d57f2",
+    "builtin-plugins/dsh-device-shell-guide/lib/index.js": "285a1f70b1953232cd4c480c80c44e3e790bd39ef66b7a60a1a63e7eb9a0fc77",
     "builtin-plugins/dsh-device-shell-guide/package.json": "aa679fa3f65536d1e2d6638c93575fcd44770fcb930d8f94514081eeec873d41",
     "builtin-plugins/dsh-status-overlay/cordis.patch.yml": "b5bffe96400a2164f313f8c86b071840387015976796fdce1e3e476f233490bd",
     "builtin-plugins/dsh-status-overlay/lib/index.js": "cf3b51585c8da0a522bcb45fa5851dfa16c512d1a9d92f37278f5af212cd5a7a",
